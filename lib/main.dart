@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
 import 'screens/home_page.dart';
@@ -27,10 +28,17 @@ class MainPageSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: HomePage(),
-      bottomNavigationBar: BottomNavBar(),
-      floatingActionButton: MyCenteredFAB(),
+    return Scaffold(
+      body: const HomePage(),
+      appBar: AppBar(
+        title: SizedBox(
+            height: 30, child: Image.asset('assets/images/splash.png')),
+        shadowColor: kWhiteColor,
+        elevation: 0.3,
+        backgroundColor: kWhiteColor,
+      ),
+      bottomNavigationBar: const BottomNavBar(),
+      floatingActionButton: const MyCenteredFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

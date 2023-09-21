@@ -24,7 +24,7 @@ class BottomNavBar extends StatelessWidget {
           // ),
           const SizedBox(), // Empty space to center the FAB
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.list),
             onPressed: () {
               // Implement profile navigation here
             },

@@ -11,6 +11,9 @@ class MainCard extends StatelessWidget {
     required this.value,
     required this.completed,
     this.onPress,
+    this.addOption = true,
+    this.cardColor = kCardColor,
+    this.textColor = kTravailFuteSecondaryColor,
   });
 
   final String label;
@@ -19,6 +22,9 @@ class MainCard extends StatelessWidget {
   final int value;
   final int completed;
   final void Function()? onPress;
+  final bool addOption;
+  final Color cardColor;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +32,11 @@ class MainCard extends StatelessWidget {
       onTap: onPress,
       child: Container(
         padding: const EdgeInsets.all(10),
-        width: 162,
-        height: 148,
+        // width: 162,
+        height: 118,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: kCardColor,
+          color: cardColor,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -41,13 +47,15 @@ class MainCard extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  color: kTravailFuteSecondaryColor,
+                  color: textColor,
                 ),
-                const CustomRoundButton(
-                  buttonIcon: Icons.add,
-                  backgroundColor: kTravailFuteMainColor,
-                  iconColor: kWhiteColor,
-                ),
+                addOption
+                    ? const CustomRoundButton(
+                        buttonIcon: Icons.add,
+                        backgroundColor: kTravailFuteMainColor,
+                        iconColor: kWhiteColor,
+                      )
+                    : Container(),
               ],
             ),
             const SizedBox(
@@ -64,21 +72,50 @@ class MainCard extends StatelessWidget {
             const SizedBox(
               height: 5,
             ),
-            LinearProgressIndicator(
-              value: value / completed,
-              backgroundColor: kProgressBarInactiveColor,
-              color: kTravailFuteMainColor,
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            const Center(
-              child: CustomRoundButton(
-                buttonIcon: Icons.record_voice_over,
-                backgroundColor: kCardColor,
-                iconColor: kTravailFuteMainColor,
-              ),
-            )
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     SizedBox(
+            //       width: 80,
+            //       child: LinearProgressIndicator(
+            //         borderRadius: BorderRadius.circular(10),
+            //         value: value / completed,
+            //         backgroundColor: kProgressBarInactiveColor,
+            //         color: kTravailFuteMainColor,
+            //       ),
+            //     ),
+            //     Container(
+            //       decoration: BoxDecoration(
+            //           color: kTravailFuteMainColor,
+            //           borderRadius: BorderRadius.circular(10)),
+            //       child: const Padding(
+            //         padding: EdgeInsets.all(4.0),
+            //         child: Text(
+            //           '5/7',
+            //           style: TextStyle(
+            //             color: kWhiteColor,
+            //             fontFamily: 'Poppins',
+            //             fontWeight: FontWeight.bold,
+            //             fontSize: 12,
+            //           ),
+            //         ),
+            //       ),
+            //     )
+            //   ],
+            // ),
+            // const SizedBox(
+            //   width: 5,
+            // ),
+            // const SizedBox(
+            //   height: 5,
+            // ),
+            // // const Center(
+            // //   child: CustomRoundButton(
+            // //     buttonIcon: Icons.record_voice_over,
+            // //     backgroundColor: kCardColor,
+            // //     iconColor: kTravailFuteMainColor,
+            // //   ),
+            // // )
           ],
         ),
       ),

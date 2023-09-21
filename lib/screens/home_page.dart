@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
               style: kWelcomePageTextStyle,
             ),
             const SizedBox(
-              height: 15,
+              height: 10,
             ),
             Row(
               children: [
@@ -139,28 +139,30 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 15,
-            ),
+            const SizedBox(height: 20),
             Row(
               children: [
-                MainCard(
-                  onPress: playRecord,
-                  label: 'Chantiers',
-                  number: '5 Nouveaux',
-                  icon: Icons.construction,
-                  value: 1,
-                  completed: 5,
+                Expanded(
+                  child: MainCard(
+                    onPress: playRecord,
+                    label: 'Chantiers',
+                    number: '5 Nouveaux',
+                    icon: Icons.construction,
+                    value: 1,
+                    completed: 5,
+                  ),
                 ),
                 const SizedBox(
                   width: 5,
                 ),
-                const MainCard(
-                    label: 'Clients',
-                    number: '15',
-                    icon: Icons.people,
-                    value: 89,
-                    completed: 89),
+                const Expanded(
+                  child: MainCard(
+                      label: 'Clients',
+                      number: '15',
+                      icon: Icons.people,
+                      value: 89,
+                      completed: 89),
+                ),
               ],
             ),
             const SizedBox(
@@ -168,22 +170,26 @@ class _HomePageState extends State<HomePage> {
             ),
             const Row(
               children: [
-                MainCard(
-                  label: 'Devis',
-                  number: '5 Nouveaux',
-                  icon: Icons.euro,
-                  value: 1,
-                  completed: 5,
+                Expanded(
+                  child: MainCard(
+                    label: 'Devis',
+                    number: '5 Nouveaux',
+                    icon: Icons.euro,
+                    value: 1,
+                    completed: 5,
+                  ),
                 ),
                 SizedBox(
                   width: 5,
                 ),
-                MainCard(
-                    label: 'Taches',
-                    number: '15',
-                    icon: Icons.task,
-                    value: 89,
-                    completed: 89),
+                Expanded(
+                  child: MainCard(
+                      label: 'Taches',
+                      number: '15',
+                      icon: Icons.task,
+                      value: 89,
+                      completed: 89),
+                ),
               ],
             ),
             const SizedBox(
@@ -191,24 +197,42 @@ class _HomePageState extends State<HomePage> {
             ),
             const Row(
               children: [
-                MainCard(
-                  label: 'Factures',
-                  number: '5 Nouveaux',
-                  icon: Icons.payment,
-                  value: 1,
-                  completed: 5,
+                Expanded(
+                  child: MainCard(
+                    label: 'Factures',
+                    number: '5 Nouveaux',
+                    icon: Icons.payment,
+                    value: 1,
+                    completed: 5,
+                  ),
                 ),
                 SizedBox(
                   width: 5,
                 ),
-                MainCard(
-                    label: 'Notifications',
-                    number: '15',
-                    icon: Icons.notifications,
-                    value: 89,
-                    completed: 89),
+                Expanded(
+                  child: MainCard(
+                      label: 'Notifications',
+                      number: '15',
+                      cardColor: kTravailFuteMainColor,
+                      addOption: false,
+                      icon: Icons.notifications,
+                      value: 89,
+                      textColor: kWhiteColor,
+                      completed: 89),
+                ),
               ],
             ),
+            // SizedBox(
+            //   height: 10,
+            // ),
+            // Expanded(
+            //   child: Container(
+            //     margin: EdgeInsets.all(8),
+            //     decoration: BoxDecoration(
+            //         color: kTravailFuteMainColor,
+            //         borderRadius: BorderRadius.circular(15)),
+            //   ),
+            // ),
             // const Text(
             //   "Important",
             //   style: kTitlePageTextStyle,
