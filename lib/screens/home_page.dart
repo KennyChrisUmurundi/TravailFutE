@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:travail_fute/utils/audio_player.dart';
 import 'package:travail_fute/utils/phone_state.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:audioplayers/audioplayers.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'package:audioplayers/audioplayers.dart';
 
 import '../widgets/main_card.dart';
 import '../widgets/wide_button.dart';
-import 'package:record/record.dart';
+// import 'package:record/record.dart';
 import 'package:logger/logger.dart';
+import 'package:travail_fute/utils/record.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,13 +23,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   PhoneState status = PhoneState.nothing();
   final logger = Logger();
-
-  final record = Record();
-  final player = AudioPlayer();
+  final record = Recording();
+  final player = AudioPlayerManager();
   // ignore: non_constant_identifier_names
-  late final String audioPath;
+  // late final String audioPath;
 
-  void handlePhoneState(PhoneState event) {
+  void handlePhoneState(PhoneState event) async {
     setState(() {
       // ignore: unnecessary_null_comparison
       if (event != null) {
@@ -39,60 +40,19 @@ class _HomePageState extends State<HomePage> {
           logger.d("CALL FROM: $number");
           // This is where i record the call
           if (status.status == PhoneStateStatus.CALL_STARTED) {
-            callRecord();
-            checkRecordingStatus();
+            record.startRecording();
+            // record.checkRecordingStatus();
           }
-        }
-        if (status.status == PhoneStateStatus.CALL_ENDED) {
-          stopRecord();
         }
       }
     });
-  }
-
-  void callRecord() async {
-    final appDirectory = await getApplicationDocumentsDirectory();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final filePath = '${appDirectory.path}/audio_$timestamp.m4a';
-
-    audioPath = filePath;
-
-    if (await record.hasPermission()) {
-      // Start recording
-      await record.start(
-        path: filePath,
-        encoder: AudioEncoder.aacLc, // by default
-        bitRate: 128000, // by default
-        samplingRate: 44100, // by default
-      );
-      logger.d("recording started and is kept at $filePath");
+    if (status.status == PhoneStateStatus.CALL_ENDED) {
+      bool isRecording = await record.checkRecordingStatus();
+      if (isRecording) {
+        record.stopRecording();
+      }
     }
   }
-
-  void stopRecord() async {
-    logger.d("Stopping record function Check");
-    await record.stop();
-    setState(() {
-      audioPath;
-    });
-  }
-
-  Future<bool> checkRecordingStatus() async {
-    bool isRecording = await record.isRecording();
-    logger.d("Is recordign:::::; $isRecording");
-    return isRecording;
-    // ignore: dead_code
-  }
-
-  void playRecord() async {
-    // The record will be handled from the backend, therefore i won't be playing it from the device
-    logger.d("ATTEMPT TO PLAY RECORD");
-    await player.play(DeviceFileSource(audioPath));
-  }
-
-  // void stopPlayingRecord() async {
-  //   await player.stop(DeviceSourceaudioPath);
-  // }
 
   @override
   void initState() {
@@ -121,7 +81,7 @@ class _HomePageState extends State<HomePage> {
             Row(
               children: [
                 WideButton(
-                  onPress: stopRecord,
+                  // onPress: record.stopRecord,
                   title: 'Overview',
                   buttonColor: kTravailFuteMainColor,
                   textColor: kWhiteColor,
@@ -131,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                   width: 10,
                 ),
                 WideButton(
-                  onPress: playRecord,
+                  // onPress: playRecord,
                   title: 'Chantiers',
                   buttonColor: kWhiteColor,
                   textColor: kTravailFuteSecondaryColor,
@@ -140,11 +100,11 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 20),
-            Row(
+            const Row(
               children: [
                 Expanded(
                   child: MainCard(
-                    onPress: playRecord,
+                    // onPress: playRecord,
                     label: 'Chantiers',
                     number: '5 Nouveaux',
                     icon: Icons.construction,
@@ -152,10 +112,10 @@ class _HomePageState extends State<HomePage> {
                     completed: 5,
                   ),
                 ),
-                const SizedBox(
+                SizedBox(
                   width: 5,
                 ),
-                const Expanded(
+                Expanded(
                   child: MainCard(
                       label: 'Clients',
                       number: '15',
