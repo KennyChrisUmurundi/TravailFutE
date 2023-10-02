@@ -28,14 +28,42 @@ class MainPageSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        // Define your theme here
+        primaryColor: kTravailFuteMainColor,
+        hintColor: kTravailFuteSecondaryColor,
+        fontFamily: 'Poppins',
+      ),
+      home: const RootScaffold(),
+    );
+  }
+}
+
+class RootScaffold extends StatelessWidget {
+  const RootScaffold({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: const HomePage(),
+      backgroundColor: kWhiteColor,
       appBar: AppBar(
         title: SizedBox(
-            height: 30, child: Image.asset('assets/images/splash.png')),
-        shadowColor: kWhiteColor,
+          height: 30,
+          child: Image.asset('assets/images/splash.png'),
+        ),
+        shadowColor: Colors.white,
         elevation: 0.3,
-        backgroundColor: kWhiteColor,
+        backgroundColor: Colors.white,
+      ),
+      body: Navigator(
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) {
+              return const HomePage();
+            },
+          );
+        },
       ),
       bottomNavigationBar: const BottomNavBar(),
       floatingActionButton: const MyCenteredFAB(),

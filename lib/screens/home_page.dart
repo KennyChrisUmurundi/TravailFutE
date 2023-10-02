@@ -12,6 +12,7 @@ import '../widgets/wide_button.dart';
 // import 'package:record/record.dart';
 import 'package:logger/logger.dart';
 import 'package:travail_fute/utils/record.dart';
+import 'clients.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -100,9 +101,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 20),
-            const Row(
+            Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: MainCard(
                     // onPress: playRecord,
                     label: 'Chantiers',
@@ -112,11 +113,18 @@ class _HomePageState extends State<HomePage> {
                     completed: 5,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 5,
                 ),
                 Expanded(
                   child: MainCard(
+                      onPress: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ClientsList()),
+                        );
+                      },
                       label: 'Clients',
                       number: '15',
                       icon: Icons.people,
