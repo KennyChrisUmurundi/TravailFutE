@@ -46,7 +46,7 @@ class RootScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kWhiteColor,
+      backgroundColor: kBackgroundColor,
       appBar: AppBar(
         title: SizedBox(
           height: 30,
@@ -56,18 +56,20 @@ class RootScaffold extends StatelessWidget {
         elevation: 0.3,
         backgroundColor: Colors.white,
       ),
-      body: Navigator(
-        onGenerateRoute: (settings) {
-          return MaterialPageRoute(
-            builder: (context) {
-              return const HomePage();
-            },
-          );
-        },
-      ),
+      body: const HomePage(),
       bottomNavigationBar: const BottomNavBar(),
       floatingActionButton: const MyCenteredFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
+
+// Navigator(
+//         onGenerateRoute: (settings) {
+//           return MaterialPageRoute(
+//             builder: (context) {
+//               return const HomePage();
+//             },
+//           );
+//         },
+//       ),

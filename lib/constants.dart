@@ -31,4 +31,4 @@ const kCardBigTextStyle = TextStyle(
 
 const kWhiteColor = Color(0xFFFFFFFF);
 
-const kCardColor = Color(0xFFF0F0F0);
+const kBackgroundColor = Color.fromARGB(255, 250, 248, 248);

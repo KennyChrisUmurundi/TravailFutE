@@ -12,7 +12,7 @@ class MainCard extends StatelessWidget {
     required this.completed,
     this.onPress,
     this.addOption = true,
-    this.cardColor = kCardColor,
+    this.cardColor = kWhiteColor,
     this.textColor = kTravailFuteSecondaryColor,
   });
 

@@ -152,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Expanded(
                   child: MainCard(
-                      label: 'Taches',
+                      label: 'Tâches',
                       number: '15',
                       icon: Icons.task,
                       value: 89,
@@ -169,7 +169,7 @@ class _HomePageState extends State<HomePage> {
                   child: MainCard(
                     label: 'Factures',
                     number: '5 Nouveaux',
-                    icon: Icons.payment,
+                    icon: Icons.receipt,
                     value: 1,
                     completed: 5,
                   ),
