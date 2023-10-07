@@ -5,7 +5,12 @@ import 'package:travail_fute/widgets/foab.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 
 class ClientDetail extends StatelessWidget {
-  const ClientDetail({super.key});
+  const ClientDetail({
+    super.key,
+    required this.client,
+  });
+
+  final Map<String, dynamic> client;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +22,7 @@ class ClientDetail extends StatelessWidget {
       ),
       backgroundColor: kBackgroundColor,
       body: Column(children: [
-        const MainSection(),
+        MainSection(client: client),
         Container(
             margin: const EdgeInsets.all(15),
             // padding: EdgeInsets.all(value),
@@ -110,7 +115,10 @@ class ClientDetail extends StatelessWidget {
 class MainSection extends StatelessWidget {
   const MainSection({
     super.key,
+    required this.client,
   });
+
+  final Map<String, dynamic> client;
 
   @override
   Widget build(BuildContext context) {
@@ -137,8 +145,9 @@ class MainSection extends StatelessWidget {
             radius: 30,
             backgroundColor: kTravailFuteMainColor,
             child: Text(
-              "KC",
-              style: TextStyle(
+              client['first_name'][0].toUpperCase() +
+                  client['last_name'][0].toUpperCase(),
+              style: const TextStyle(
                 color: kWhiteColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -149,7 +158,7 @@ class MainSection extends StatelessWidget {
             height: 8,
           ),
           Text(
-            "Kenny Chris Ndayikengurukiye",
+            client['first_name'] + ' ' + client['last_name'],
             style: TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
@@ -160,7 +169,7 @@ class MainSection extends StatelessWidget {
             height: 5,
           ),
           Text(
-            "Kennychrism95@gmail.com",
+            client['email'].toString(),
             style: TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,

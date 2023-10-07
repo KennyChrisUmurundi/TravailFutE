@@ -5,7 +5,10 @@ import 'package:travail_fute/screens/client_detail.dart';
 class ClientCard extends StatelessWidget {
   const ClientCard({
     super.key,
+    required this.client,
   });
+
+  final Map<String, dynamic> client;
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +16,7 @@ class ClientCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ClientDetail()),
+          MaterialPageRoute(builder: (context) => ClientDetail(client: client)),
         );
       },
       child: Container(
@@ -24,21 +27,22 @@ class ClientCard extends StatelessWidget {
           color: kWhiteColor,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircleAvatar(
               backgroundColor: kTravailFuteMainColor,
               child: Text(
-                "KN",
-                style: TextStyle(
+                client['first_name'][0].toUpperCase() +
+                    client['last_name'][0].toUpperCase(),
+                style: const TextStyle(
                   color: kWhiteColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 15,
             ),
             Column(
@@ -47,17 +51,17 @@ class ClientCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.contacts,
                       size: 12,
                       color: kTravailFuteMainColor,
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 8,
                     ),
                     Text(
-                      "Kenny Chris Ndayikengurukiye",
-                      style: TextStyle(
+                      client['first_name'] + ' ' + client['last_name'],
+                      style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
                           color: kTravailFuteSecondaryColor,
@@ -67,17 +71,17 @@ class ClientCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.location_city,
                       size: 12,
                       color: kTravailFuteMainColor,
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 8,
                     ),
                     Text(
-                      "Rue de la cooperation 49/13",
-                      style: TextStyle(
+                      client['adresse_facturation'].toString(),
+                      style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
@@ -87,17 +91,17 @@ class ClientCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.phone,
                       size: 12,
                       color: kTravailFuteMainColor,
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 8,
                     ),
                     Text(
-                      "0467070914",
-                      style: TextStyle(
+                      "0${client['phone_number'][0]["number"]}",
+                      style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
