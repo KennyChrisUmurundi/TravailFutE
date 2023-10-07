@@ -4,11 +4,24 @@ import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
 import 'screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   runApp(const MyApp());
+}
+
+// TODO: I NEED TO GET THE DEVICE ID OR SERIAL NUMBER FIRST
+Future<String?> getAndroidDeviceId() async {
+  String? deviceId;
+  try {
+    deviceId =
+        await MethodChannel('your_channel_name').invokeMethod('getDeviceId');
+  } on PlatformException catch (e) {
+    print('Error getting Android device ID: $e');
+  }
+  return deviceId;
 }
 
 class MyApp extends StatelessWidget {
