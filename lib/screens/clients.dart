@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
@@ -46,7 +47,28 @@ class _ClientsListState extends State<ClientsList> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        title: SearchEngine(),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+              flex: 3,
+              child: SearchEngine(),
+            ),
+            Expanded(
+              child: IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ClientCreatePage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add),
+              ),
+            )
+          ],
+        ),
       ),
       backgroundColor: kBackgroundColor,
       body: Column(

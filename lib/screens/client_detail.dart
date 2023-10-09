@@ -154,29 +154,29 @@ class MainSection extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 8,
           ),
           Text(
             client['first_name'] + ' ' + client['last_name'],
-            style: TextStyle(
+            style: const TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
                 color: kTravailFuteSecondaryColor,
                 fontSize: 18),
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Text(
             client['email'].toString(),
-            style: TextStyle(
+            style: const TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
                 fontSize: 12),
           ),
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
           Row(
@@ -187,35 +187,35 @@ class MainSection extends StatelessWidget {
                 backgroundColor: Colors.green,
                 child: IconButton(
                   onPressed: () {},
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.phone,
                     color: kWhiteColor,
                   ),
                   color: Colors.green,
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 width: 5,
               ),
               CircleAvatar(
                 backgroundColor: Colors.amber,
                 child: IconButton(
                   onPressed: () {},
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.mail,
                     color: kWhiteColor,
                   ),
                   color: Colors.green,
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 width: 5,
               ),
               CircleAvatar(
                 backgroundColor: Colors.indigo,
                 child: IconButton(
                   onPressed: () {},
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.location_on,
                     color: kWhiteColor,
                   ),

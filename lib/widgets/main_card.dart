@@ -14,6 +14,7 @@ class MainCard extends StatelessWidget {
     this.addOption = true,
     this.cardColor = kWhiteColor,
     this.textColor = kTravailFuteSecondaryColor,
+    this.onAddPress,
   });
 
   final String label;
@@ -25,10 +26,12 @@ class MainCard extends StatelessWidget {
   final bool addOption;
   final Color cardColor;
   final Color textColor;
+  final void Function()? onAddPress;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onPress,
       child: Container(
         padding: const EdgeInsets.all(10),
@@ -49,17 +52,21 @@ class MainCard extends StatelessWidget {
                   icon,
                   color: textColor,
                 ),
-                addOption
-                    ? const CustomRoundButton(
-                        buttonIcon: Icons.add,
-                        backgroundColor: kTravailFuteMainColor,
-                        iconColor: kWhiteColor,
-                      )
-                    : Container(),
+                // addOption
+                //     ? GestureDetector(
+                //         behavior: HitTestBehavior.opaque,
+                //         onTap: onAddPress,
+                //         child: CustomRoundButton(
+                //           buttonIcon: Icons.add,
+                //           backgroundColor: kTravailFuteMainColor,
+                //           iconColor: kWhiteColor,
+                //         ),
+                //       )
+                //     : Container(),
               ],
             ),
             const SizedBox(
-              height: 5,
+              height: 10,
             ),
             Text(
               number,
@@ -69,9 +76,9 @@ class MainCard extends StatelessWidget {
               label,
               style: kCardBigTextStyle,
             ),
-            const SizedBox(
-              height: 5,
-            ),
+            // const SizedBox(
+            //   height: 5,
+            // ),
             // Row(
             //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
             //   children: [

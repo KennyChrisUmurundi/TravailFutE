@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/utils/audio_player.dart';
 import 'package:travail_fute/utils/phone_state.dart';
 // import 'package:path_provider/path_provider.dart';
@@ -126,7 +127,7 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                       label: 'Clients',
-                      number: '15',
+                      number: '12',
                       icon: Icons.people,
                       value: 89,
                       completed: 89),
@@ -259,10 +260,12 @@ class CustomRoundButton extends StatelessWidget {
     required this.buttonIcon,
     required this.backgroundColor,
     required this.iconColor,
+    // this.onPress,
   });
   final IconData buttonIcon;
   final Color backgroundColor;
   final Color iconColor;
+  // final void Function()? onPress;
   @override
   Widget build(BuildContext context) {
     return Container(
