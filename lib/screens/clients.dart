@@ -27,8 +27,7 @@ class _ClientsListState extends State<ClientsList> {
   }
 
   void callClient() async {
-    final client =
-        ClientService("https://44bd-85-27-15-158.ngrok-free.app/api/clients/");
+    final client = ClientService();
     try {
       clientList = await client.getClientList();
       setState(() {

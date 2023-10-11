@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
-import 'package:travail_fute/screens/client_create.dart';
+// import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/utils/audio_player.dart';
 import 'package:travail_fute/utils/phone_state.dart';
 // import 'package:path_provider/path_provider.dart';
@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   final logger = Logger();
   final record = Recording();
   final player = AudioPlayerManager();
+  String number = "00000";
   // ignore: non_constant_identifier_names
   // late final String audioPath;
 
@@ -38,8 +39,7 @@ class _HomePageState extends State<HomePage> {
         status = event;
         if (status.status == PhoneStateStatus.CALL_INCOMING ||
             status.status == PhoneStateStatus.CALL_STARTED) {
-          final number = status.number;
-          logger.d("CALL FROM: $number");
+          getNumber(status);
           // This is where i record the call
           if (status.status == PhoneStateStatus.CALL_STARTED) {
             record.startRecording();
@@ -51,9 +51,14 @@ class _HomePageState extends State<HomePage> {
     if (status.status == PhoneStateStatus.CALL_ENDED) {
       bool isRecording = await record.checkRecordingStatus();
       if (isRecording) {
-        record.stopRecording();
+        record.stopRecording(number);
       }
     }
+  }
+
+  void getNumber(status) async {
+    number = status.number;
+    logger.d("CALL FROM: $number");
   }
 
   @override
