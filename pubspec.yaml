@@ -14,11 +14,11 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   flutter_native_splash: ^2.3.2
-  phone_state: ^1.0.3
+  phone_state: ^2.0.1
   permission_handler: ^11.0.0
-  record: ^4.4.4
+  record: ^5.2.0
   path_provider: ^2.1.1
-  audioplayers: ^5.1.0
+  audioplayers: ^6.1.0
   logger: ^2.0.2
   flutter_spinkit: ^5.2.0
   http: ^1.1.0

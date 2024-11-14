@@ -5,7 +5,7 @@ import 'package:travail_fute/services/recording_service.dart';
 
 class Recording {
   final logger = Logger();
-  final record = Record();
+  final record =  AudioRecorder();
 
   String audioPath = "";
   late final String number;
@@ -20,10 +20,11 @@ class Recording {
     if (await record.hasPermission()) {
       // Start recording
       await record.start(
-        path: filePath,
-        encoder: AudioEncoder.aacLc, // by default
-        bitRate: 128000, // by default
-        samplingRate: 44100, // by default
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc, // updated enum name
+          bitRate: 128000, // now specified through RecordConfig
+          sampleRate: 44100, // renamed from samplingRate
+        ), path: filePath,
       );
       logger.d("recording started and is kept at $filePath");
     }

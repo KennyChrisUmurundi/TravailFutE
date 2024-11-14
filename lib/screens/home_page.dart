@@ -72,7 +72,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      bottom: false,
       child: Container(
+        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
         margin: const EdgeInsets.fromLTRB(15, 0, 15, 0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
