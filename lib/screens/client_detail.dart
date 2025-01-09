@@ -4,6 +4,14 @@ import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 
+
+/**
+ * YOOOOOO CAPTAIN....
+ * YOU MIGHT WANT TO ADJUST SOME OF THE FIGURES ON THIS PAGE 
+ * BECAUSE i WAS FLYING BLIND, COULDN'T CREATE A NEW CLIENT TO TEST
+ */
+
+
 class ClientDetail extends StatelessWidget {
   const ClientDetail({
     super.key,
@@ -14,6 +22,10 @@ class ClientDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // LOCAL VARIABLES
+    var size = MediaQuery.of(context).size;
+    var width = size.width;
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -24,7 +36,7 @@ class ClientDetail extends StatelessWidget {
       body: Column(children: [
         MainSection(client: client),
         Container(
-            margin: const EdgeInsets.all(15),
+            margin:  EdgeInsets.all(width * 0.045),
             // padding: EdgeInsets.all(value),
             // decoration: BoxDecoration(color: kWhiteColor),
             child: Column(
@@ -42,8 +54,8 @@ class ClientDetail extends StatelessWidget {
                         cardColor: kWhiteColor,
                       ),
                     ),
-                    const SizedBox(
-                      width: 5,
+                     SizedBox(
+                      width: width * 0.015,
                     ),
                     Expanded(
                       child: MainCard(
@@ -63,8 +75,8 @@ class ClientDetail extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 5,
+                 SizedBox(
+                  height: width * 0.015,
                 ),
                 Row(
                   children: [
@@ -84,8 +96,8 @@ class ClientDetail extends StatelessWidget {
                           cardColor: kWhiteColor,
                           completed: 89),
                     ),
-                    const SizedBox(
-                      width: 5,
+                     SizedBox(
+                      width: width * 0.015,
                     ),
                     const Expanded(
                       child: MainCard(
@@ -122,11 +134,15 @@ class MainSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // LOCAL VARIABLES
+    var size = MediaQuery.of(context).size;
+    var width = size.width;
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.all(5),
+      padding:  EdgeInsets.all(width * 0.075),
+      margin:  EdgeInsets.all(width * 0.015),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(width * 0.025),
         color: kWhiteColor,
         boxShadow: const [
           BoxShadow(
@@ -142,42 +158,42 @@ class MainSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            radius: 30,
+            radius: width * 0.05,
             backgroundColor: kTravailFuteMainColor,
             child: Text(
               client['first_name'][0].toUpperCase() +
                   client['last_name'][0].toUpperCase(),
-              style: const TextStyle(
+              style:  TextStyle(
                 color: kWhiteColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: width * 0.035,
               ),
             ),
           ),
-          const SizedBox(
-            height: 8,
+           SizedBox(
+            height: width * 0.015,
           ),
           Text(
             client['first_name'] + ' ' + client['last_name'],
-            style: const TextStyle(
+            style:  TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
                 color: kTravailFuteSecondaryColor,
-                fontSize: 18),
+                fontSize: width * 0.05),
           ),
-          const SizedBox(
-            height: 5,
+           SizedBox(
+            height: width * 0.015,
           ),
           Text(
             client['email'].toString(),
-            style: const TextStyle(
+            style:  TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
-                fontSize: 12),
+                fontSize: width * 0.04),
           ),
-          const SizedBox(
-            height: 10,
+           SizedBox(
+            height: width * 0.025,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -194,8 +210,8 @@ class MainSection extends StatelessWidget {
                   color: Colors.green,
                 ),
               ),
-              const SizedBox(
-                width: 5,
+               SizedBox(
+                width: width * 0.015,
               ),
               CircleAvatar(
                 backgroundColor: Colors.amber,
@@ -208,8 +224,8 @@ class MainSection extends StatelessWidget {
                   color: Colors.green,
                 ),
               ),
-              const SizedBox(
-                width: 5,
+               SizedBox(
+                width: width * 0.015,
               ),
               CircleAvatar(
                 backgroundColor: Colors.indigo,

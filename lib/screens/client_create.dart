@@ -18,8 +18,13 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
 
   @override
   Widget build(BuildContext context) {
+    // LOCAL VARIABLES
+    var size = MediaQuery.of(context).size;
+    var width = size.width;
+    var height = size.height;
+
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -27,7 +32,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
       ),
       backgroundColor: kBackgroundColor,
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(width * 0.025),
         child: FormBuilder(
           key: _formKey,
           autovalidateMode: AutovalidateMode.disabled,
@@ -39,24 +44,24 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
                   // textHint: 'Jean',
                   icon: Icons.person,
                 ),
-                const SizedBox(
-                  height: 5,
+                SizedBox(
+                  height: width * 0.015,
                 ),
                 const FormTextField(
                   textLabel: 'Prenom',
                   // textHint: 'Jean',
                   icon: Icons.person,
                 ),
-                const SizedBox(
-                  height: 5,
+                SizedBox(
+                  height: width * 0.015,
                 ),
                 const FormTextField(
                   textLabel: 'Addresse',
                   // textHint: 'Jean',
                   icon: Icons.location_on,
                 ),
-                const SizedBox(
-                  height: 5,
+                SizedBox(
+                  height: width * 0.015,
                 ),
                 const FormTextField(
                   textLabel: 'Telephone',
@@ -83,12 +88,15 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
                 //   // Add validation and initial value as needed
                 // ),
                 // Repeat for other form fields (first_name, last_name, etc.)
-                const SizedBox(height: 20),
+                SizedBox(
+                  height: width * 0.05,
+                ),
                 ElevatedButton(
                   style: ButtonStyle(
                     backgroundColor:
-                        MaterialStateProperty.all<Color>(kTravailFuteMainColor),
-                    minimumSize: MaterialStateProperty.all<Size>(Size(150, 50)),
+                        WidgetStateProperty.all<Color>(kTravailFuteMainColor),
+                    minimumSize:
+                        WidgetStateProperty.all<Size>(const Size(150, 50)),
                   ),
                   onPressed: () async {
                     if (_formKey.currentState!.saveAndValidate()) {
@@ -136,8 +144,12 @@ class FormTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      // LOCAL VARIABLES
+      var size = MediaQuery.of(context).size;
+      var width = size.width;
+
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding:  EdgeInsets.all(width * 0.025),
       child: FormBuilderTextField(
         name: textLabel,
         decoration: InputDecoration(

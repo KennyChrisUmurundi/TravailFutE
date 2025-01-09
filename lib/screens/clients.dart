@@ -42,6 +42,10 @@ class _ClientsListState extends State<ClientsList> {
 
   @override
   Widget build(BuildContext context) {
+    // LOCAL VARIABLES 
+    var size = MediaQuery.of(context).size;
+    var width = size.width;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -75,7 +79,7 @@ class _ClientsListState extends State<ClientsList> {
           // const SearchBar(),
           Expanded(
             child: ListView.builder(
-                padding: const EdgeInsets.all(8),
+                padding:  EdgeInsets.all(width * 0.025),
                 itemCount: clientList.length,
                 itemBuilder: (BuildContext context, int index) {
                   return ClientCard(client: clientList[index]);

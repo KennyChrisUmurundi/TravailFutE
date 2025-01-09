@@ -12,8 +12,8 @@ class _SearchEngineState extends State<SearchEngine> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(10),
-      margin: EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.all(8),
       height: 45,
       decoration: BoxDecoration(
         // border: Border.all(

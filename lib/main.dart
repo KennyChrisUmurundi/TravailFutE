@@ -17,7 +17,7 @@ Future<String?> getAndroidDeviceId() async {
   String? deviceId;
   try {
     deviceId =
-        await MethodChannel('your_channel_name').invokeMethod('getDeviceId');
+        await const MethodChannel('your_channel_name').invokeMethod('getDeviceId');
   } on PlatformException catch (e) {
     print('Error getting Android device ID: $e');
   }
