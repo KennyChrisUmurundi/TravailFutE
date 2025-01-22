@@ -3,18 +3,29 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 const String apiUrl =
-    "https://7d12-2a02-2788-1b8-69f-acfb-61a6-6bf2-5e13.ngrok-free.app/api/clients/";
+    "https://tfte.azurewebsites.net/api/clients/";
 
 class ClientService {
-  Future<List<dynamic>> getClientList() async {
+  Future<Map<String, dynamic>> getClientList(String deviceToken, {String? url}) async { // Add optional url parameter
+    final headers = {
+      'Authorization': 'Token $deviceToken',
+      'Content-Type': 'application/json',
+    };
+
     try {
-      final response = await http.get(Uri.parse(apiUrl));
+      print("THE HEADERS $headers");
+      final response = await http.get(
+        Uri.parse(url ?? apiUrl), // Use the provided URL or the default API URL
+        headers: headers,
+      );
+      print("Response Headers: ${response.headers}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
-        final List<dynamic> clientList = json.decode(response.body);
-        return clientList;
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData;
       } else {
-        throw Exception('Failed to load client list');
+        throw Exception('Failed to load client list: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error: $e');

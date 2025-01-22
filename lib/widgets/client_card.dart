@@ -80,7 +80,7 @@ class ClientCard extends StatelessWidget {
                       width: 8,
                     ),
                     Text(
-                      client['adresse_facturation'].toString(),
+                      client['address'].toString(),
                       style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ class ClientCard extends StatelessWidget {
                       width: 8,
                     ),
                     Text(
-                      "0${client['phone_number'][0]["number"]}",
+                      "${client['phone_number']}",
                       style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,

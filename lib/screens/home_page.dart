@@ -5,6 +5,8 @@ import 'package:phone_state/phone_state.dart';
 // import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/utils/audio_player.dart';
 import 'package:travail_fute/utils/phone_state.dart';
+import 'package:travail_fute/widgets/botom_nav.dart';
+import 'package:travail_fute/widgets/foab.dart';
 // import 'package:path_provider/path_provider.dart';
 // import 'package:audioplayers/audioplayers.dart';
 
@@ -16,7 +18,10 @@ import 'package:travail_fute/utils/record.dart';
 import 'clients.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Map<String, dynamic> user; // Add user parameter
+  final String deviceToken; // Add device token parameter
+
+  const HomePage({super.key, required this.user, required this.deviceToken}); // Update constructor
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -71,192 +76,209 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-        margin: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bonjour, Chris!',
-              style: kWelcomePageTextStyle,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              children: [
-                WideButton(
-                  // onPress: record.stopRecord,
-                  title: 'Overview',
-                  buttonColor: kTravailFuteMainColor,
-                  textColor: kWhiteColor,
-                  borderColor: kTravailFuteMainColor,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                WideButton(
-                  // onPress: playRecord,
-                  title: 'Chantiers',
-                  buttonColor: kWhiteColor,
-                  textColor: kTravailFuteSecondaryColor,
-                  borderColor: kTravailFuteSecondaryColor,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                const Expanded(
-                  child: MainCard(
+    return Scaffold(
+      backgroundColor: kBackgroundColor,
+      appBar: AppBar(
+        title: SizedBox(
+          height: 30,
+          child: Image.asset('assets/images/splash.png'),
+        ),
+        shadowColor: Colors.white,
+        elevation: 0.3,
+        backgroundColor: Colors.white,
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+          margin: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bonjour, ${widget.user['username']}!', // Display user's name
+                style: kWelcomePageTextStyle,
+              
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  WideButton(
+                    // onPress: record.stopRecord,
+                    title: 'Overview',
+                    buttonColor: kTravailFuteMainColor,
+                    textColor: kWhiteColor,
+                    borderColor: kTravailFuteMainColor,
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  WideButton(
                     // onPress: playRecord,
-                    label: 'Chantiers',
-                    number: '5 Nouveaux',
-                    icon: Icons.construction,
-                    value: 1,
-                    completed: 5,
+                    title: 'Chantiers',
+                    buttonColor: kWhiteColor,
+                    textColor: kTravailFuteSecondaryColor,
+                    borderColor: kTravailFuteSecondaryColor,
                   ),
-                ),
-                const SizedBox(
-                  width: 5,
-                ),
-                Expanded(
-                  child: MainCard(
-                      onPress: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const ClientsList()),
-                        );
-                      },
-                      label: 'Clients',
-                      number: '12',
-                      icon: Icons.people,
-                      value: 89,
-                      completed: 89),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            const Row(
-              children: [
-                Expanded(
-                  child: MainCard(
-                    label: 'Devis',
-                    number: '5 Nouveaux',
-                    icon: Icons.euro,
-                    value: 1,
-                    completed: 5,
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(
+                    child: MainCard(
+                      // onPress: playRecord,
+                      label: 'Chantiers',
+                      number: '5 Nouveaux',
+                      icon: Icons.construction,
+                      value: 1,
+                      completed: 5,
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: 5,
-                ),
-                Expanded(
-                  child: MainCard(
-                      label: 'Tâches',
-                      number: '15',
-                      icon: Icons.task,
-                      value: 89,
-                      completed: 89),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            const Row(
-              children: [
-                Expanded(
-                  child: MainCard(
-                    label: 'Factures',
-                    number: '5 Nouveaux',
-                    icon: Icons.receipt,
-                    value: 1,
-                    completed: 5,
+                  const SizedBox(
+                    width: 5,
                   ),
-                ),
-                SizedBox(
-                  width: 5,
-                ),
-                Expanded(
-                  child: MainCard(
-                      label: 'Notifications',
-                      number: '15',
-                      cardColor: kTravailFuteMainColor,
-                      addOption: false,
-                      icon: Icons.notifications,
-                      value: 89,
-                      textColor: kWhiteColor,
-                      completed: 89),
-                ),
-              ],
-            ),
-            // SizedBox(
-            //   height: 10,
-            // ),
-            // Expanded(
-            //   child: Container(
-            //     margin: EdgeInsets.all(8),
-            //     decoration: BoxDecoration(
-            //         color: kTravailFuteMainColor,
-            //         borderRadius: BorderRadius.circular(15)),
-            //   ),
-            // ),
-            // const Text(
-            //   "Important",
-            //   style: kTitlePageTextStyle,
-            // ),
-            // Container(
-            //   // height: 50,
-            //   // // width: 200,
-            //   decoration: BoxDecoration(
-            //       border: Border.all(
-            //         width: 1,
-            //         color: kCardColor,
-            //       ),
-            //       borderRadius: BorderRadius.circular(10)),
-            //   child: Column(
-            //     children: [
-            //       Row(
-            //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //         children: [
-            //           WideButton(
-            //             onPress: stopRecord,
-            //             title: 'Details',
-            //             buttonColor: kTravailFuteMainColor,
-            //             textColor: kWhiteColor,
-            //             borderColor: kTravailFuteMainColor,
-            //           ),
-            //           const Row(
-            //             children: [
-            //               Text(
-            //                 '3 Appels',
-            //                 style: kCardBigTextStyle,
-            //               ),
-            //               SizedBox(
-            //                 width: 3,
-            //               ),
-            //               Icon(
-            //                 Icons.call,
-            //                 size: 12,
-            //               ),
-            //             ],
-            //           )
-            //         ],
-            //       )
-            //     ],
-            //   ),
-            // )
-          ],
+                  Expanded(
+                    child: MainCard(
+                        onPress: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ClientsList(deviceToken: widget.deviceToken), // Pass device token
+                            ),
+                          );
+                        },
+                        label: 'Clients',
+                        number: '12',
+                        icon: Icons.people,
+                        value: 89,
+                        completed: 89),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              const Row(
+                children: [
+                  Expanded(
+                    child: MainCard(
+                      label: 'Devis',
+                      number: '5 Nouveaux',
+                      icon: Icons.euro,
+                      value: 1,
+                      completed: 5,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Expanded(
+                    child: MainCard(
+                        label: 'Tâches',
+                        number: '15',
+                        icon: Icons.task,
+                        value: 89,
+                        completed: 89),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              const Row(
+                children: [
+                  Expanded(
+                    child: MainCard(
+                      label: 'Factures',
+                      number: '5 Nouveaux',
+                      icon: Icons.receipt,
+                      value: 1,
+                      completed: 5,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Expanded(
+                    child: MainCard(
+                        label: 'Notifications',
+                        number: '15',
+                        cardColor: kTravailFuteMainColor,
+                        addOption: false,
+                        icon: Icons.notifications,
+                        value: 89,
+                        textColor: kWhiteColor,
+                        completed: 89),
+                  ),
+                ],
+              ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              // Expanded(
+              //   child: Container(
+              //     margin: EdgeInsets.all(8),
+              //     decoration: BoxDecoration(
+              //         color: kTravailFuteMainColor,
+              //         borderRadius: BorderRadius.circular(15)),
+              //   ),
+              // ),
+              // const Text(
+              //   "Important",
+              //   style: kTitlePageTextStyle,
+              // ),
+              // Container(
+              //   // height: 50,
+              //   // // width: 200,
+              //   decoration: BoxDecoration(
+              //       border: Border.all(
+              //         width: 1,
+              //         color: kCardColor,
+              //       ),
+              //       borderRadius: BorderRadius.circular(10)),
+              //   child: Column(
+              //     children: [
+              //       Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: [
+              //           WideButton(
+              //             onPress: stopRecord,
+              //             title: 'Details',
+              //             buttonColor: kTravailFuteMainColor,
+              //             textColor: kWhiteColor,
+              //             borderColor: kTravailFuteMainColor,
+              //           ),
+              //           const Row(
+              //             children: [
+              //               Text(
+              //                 '3 Appels',
+              //                 style: kCardBigTextStyle,
+              //               ),
+              //               SizedBox(
+              //                 width: 3,
+              //               ),
+              //               Icon(
+              //                 Icons.call,
+              //                 size: 12,
+              //               ),
+              //             ],
+              //           )
+              //         ],
+              //       )
+              //     ],
+              //   ),
+              // )
+            ],
+          ),
         ),
       ),
+      bottomNavigationBar: const BottomNavBar(),
+      floatingActionButton: const MyCenteredFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
 import 'screens/home_page.dart';
@@ -69,10 +70,10 @@ class RootScaffold extends StatelessWidget {
         elevation: 0.3,
         backgroundColor: Colors.white,
       ),
-      body: const HomePage(),
-      bottomNavigationBar: const BottomNavBar(),
-      floatingActionButton: const MyCenteredFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      body: LoginScreen(),
+      // bottomNavigationBar: const BottomNavBar(),
+      // floatingActionButton: const MyCenteredFAB(),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
