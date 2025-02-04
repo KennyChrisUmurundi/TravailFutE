@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-// import 'package:travail_fute/screens/clients.dart';
 
-class SearchEngine extends StatefulWidget {
-  const SearchEngine({super.key});
+class SearchEngine extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String) onSubmitted;
 
-  @override
-  State<SearchEngine> createState() => _SearchEngineState();
-}
+  const SearchEngine({
+    super.key,
+    required this.controller,
+    required this.onSubmitted,
+  });
 
-class _SearchEngineState extends State<SearchEngine> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -16,19 +17,14 @@ class _SearchEngineState extends State<SearchEngine> {
       margin: const EdgeInsets.all(8),
       height: 45,
       decoration: BoxDecoration(
-        // border: Border.all(
-        //   color: Colors.grey,
-        //   width: 0.2,
-        // ),
         borderRadius: BorderRadius.circular(15.0),
       ),
-      child: const Row(
-        // mainAxisAlignment: MainAxisAlignment.start,
-        // crossAxisAlignment: CrossAxisAlignment.baseline,
+      child: Row(
         children: [
           Expanded(
             child: TextField(
-              decoration: InputDecoration(
+              controller: controller,
+              decoration: const InputDecoration(
                 hintStyle: TextStyle(
                   color: Colors.grey,
                   fontFamily: "Poppins",
@@ -36,16 +32,10 @@ class _SearchEngineState extends State<SearchEngine> {
                 hintText: "Recherche",
                 contentPadding: EdgeInsets.all(7.0),
                 border: InputBorder.none,
-                // icon: Icon(Icons.search)
               ),
+              onSubmitted: onSubmitted,
             ),
           ),
-          // IconButton(
-          //   icon: const Icon(Icons.search),
-          //   onPressed: () {
-          //     // Implement your search logic here
-          //   },
-          // ),
         ],
       ),
     );

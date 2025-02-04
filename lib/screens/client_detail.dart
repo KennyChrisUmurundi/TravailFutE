@@ -5,11 +5,9 @@ import 'package:travail_fute/widgets/foab.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 
 
-/**
- * YOOOOOO CAPTAIN....
- * YOU MIGHT WANT TO ADJUST SOME OF THE FIGURES ON THIS PAGE 
- * BECAUSE i WAS FLYING BLIND, COULDN'T CREATE A NEW CLIENT TO TEST
- */
+/// YOOOOOO CAPTAIN....
+/// YOU MIGHT WANT TO ADJUST SOME OF THE FIGURES ON THIS PAGE 
+/// BECAUSE i WAS FLYING BLIND, COULDN'T CREATE A NEW CLIENT TO TEST
 
 
 class ClientDetail extends StatelessWidget {

@@ -13,6 +13,21 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+tasks.register("cleanAndroidManifest") {
+    doLast {
+        rootProject.allprojects.forEach { subproject ->
+            var manifestFile = File(subproject.projectDir, "src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                var content = manifestFile.readText()
+                var updatedContent = content.replace(Regex("""package\s*=\s*".*?"\s*"""), "")
+                manifestFile.writeText(updatedContent)
+                println("✅ Cleaned AndroidManifest.xml for ${subproject.name}")
+            }
+        }
+    }
 }

@@ -12,10 +12,11 @@ environment:
 dependencies:
     flutter:
         sdk: flutter
+    provider: ^6.0.5
     cupertino_icons: ^1.0.2
     flutter_native_splash: ^2.3.2
     phone_state: ^2.0.1
-    permission_handler: ^11.0.0
+    permission_handler: ^11.3.1
     record: ^5.2.0
     path_provider: ^2.1.1
     audioplayers: ^6.1.0
@@ -25,10 +26,13 @@ dependencies:
     flutter_form_builder: ^9.1.1
 
     path: any
+    smswatcher: ^0.0.3
+    flutter_sms_manager:
+        path: ../flutter_sms_manager
 dev_dependencies:
     flutter_test:
         sdk: flutter
-    flutter_lints: ^2.0.0
+    flutter_lints: ^5.0.0
 
 flutter:
     uses-material-design: true

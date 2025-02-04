@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // Add this import
+// Add this import
 // import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 import 'package:travail_fute/constants.dart';
@@ -23,31 +23,33 @@ class ClientsList extends StatefulWidget {
 class _ClientsListState extends State<ClientsList> {
   final logger = Logger();
   List<dynamic> clientList = [];
+  List<dynamic> filteredClientList = [];
   String? nextUrl;
   String? previousUrl;
   final ScrollController _scrollController = ScrollController();
   bool isLoading = false; // Add loading state
   String? errorMessage; // Add error message state
+  final TextEditingController _searchController = TextEditingController(); // Add search controller
 
   @override
   void initState() {
     //getting the client list
     callClient();
     _scrollController.addListener(_scrollListener);
+    _searchController.addListener(_filterClients); // Add listener to search controller
     super.initState();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose(); // Dispose search controller
     super.dispose();
   }
 
   void _scrollListener() {
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-
       if (nextUrl != null) {
-  
         callClient(url: nextUrl);
       }
     } else if (_scrollController.position.pixels == _scrollController.position.minScrollExtent) {
@@ -65,7 +67,7 @@ class _ClientsListState extends State<ClientsList> {
     final client = ClientService();
     try {
       print("Making request to URL: ${url ?? 'default API URL'} with token: ${widget.deviceToken}");
-      final responseData = await client.getClientList(widget.deviceToken, url: url);
+      final responseData = await client.getClientList( context,url: url);
       print("Response Data: $responseData"); // Debug print
       setState(() {
         if (url == null) {
@@ -73,6 +75,7 @@ class _ClientsListState extends State<ClientsList> {
         } else {
           clientList.addAll(responseData['results']);
         }
+        filteredClientList = clientList; // Initialize filtered list
         nextUrl = responseData['next'];
         previousUrl = responseData['previous'];
         print('Next URL: $nextUrl, Previous URL: $previousUrl');
@@ -90,6 +93,16 @@ class _ClientsListState extends State<ClientsList> {
         isLoading = false; // Set loading to false
       });
     }
+  }
+
+  void _filterClients() {
+    final query = _searchController.text;
+    setState(() {
+      filteredClientList = clientList.where((client) {
+        final name = client['last_name'];
+        return name.contains(query);
+      }).toList();
+    });
   }
 
   void _showErrorDialog() {
@@ -122,42 +135,38 @@ class _ClientsListState extends State<ClientsList> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              flex: 3,
-              child: SearchEngine(),
-            ),
-            Expanded(
-              child: IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ClientCreatePage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add),
-              ),
-            )
-          ],
+        title: SearchEngine(
+          controller: _searchController,
+          onSubmitted: (value) {
+            _filterClients();
+          },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ClientCreatePage(deviceToken: widget.deviceToken),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       backgroundColor: kBackgroundColor,
       body: Stack(
         children: [
           Column(
             children: [
-              // const SearchBar(),
               Expanded(
                 child: ListView.builder(
                     controller: _scrollController,
                     padding: EdgeInsets.all(width * 0.025),
-                    itemCount: clientList.length,
+                    itemCount: filteredClientList.length,
                     itemBuilder: (BuildContext context, int index) {
-                      return ClientCard(client: clientList[index]);
+                      return ClientCard(client: filteredClientList[index]);
                     }),
               ),
               // Row(

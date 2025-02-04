@@ -8,6 +8,8 @@ import 'package:flutter/services.dart'; // Added import for FilteringTextInputFo
 import 'package:travail_fute/widgets/loading.dart'; // Add this import
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -17,12 +19,35 @@ class _LoginScreenState extends State<LoginScreen> {
   final _pinController = TextEditingController();
   final CredentialService _credentialService = CredentialService();
   bool _isLoading = false; // Add loading state
+  bool _isPhoneValid = false; // Add phone validation state
+  bool _isPinValid = false; // Add PIN validation state
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_validatePhone); // Add listener to validate phone number
+    _pinController.addListener(_validatePin); // Add listener to validate PIN
+  }
 
   @override
   void dispose() {
+    _phoneController.removeListener(_validatePhone); // Remove listener
+    _pinController.removeListener(_validatePin); // Remove listener
     _phoneController.dispose();
     _pinController.dispose();
     super.dispose();
+  }
+
+  void _validatePhone() {
+    setState(() {
+      _isPhoneValid = _phoneController.text.length == 10;
+    });
+  }
+
+  void _validatePin() {
+    setState(() {
+      _isPinValid = _pinController.text.length == 4;
+    });
   }
 
   Future<void> _login() async {
@@ -33,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final phone = _phoneController.text;
     final pin = _pinController.text;
 
-    final response = await _credentialService.login(phone, pin);
+    final response = await _credentialService.login(context,phone, pin);
 
     setState(() {
       _isLoading = false; // Set loading state to false
@@ -62,11 +87,11 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Échec de la connexion'),
+          title: const Text('Échec de la connexion'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -85,56 +110,88 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: kBackgroundColor,
           body: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Center( // Added Center widget
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center, // Center the column vertically
-                children: <Widget>[
-                  TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      labelStyle: TextStyle(color: kTravailFuteMainColor), // Set text color
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: kTravailFuteMainColor), // Added border color
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: kTravailFuteMainColor), // Added focused border color
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _pinController,
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'PIN',
-                      labelStyle: TextStyle(color: kTravailFuteMainColor), // Set text color
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: kTravailFuteMainColor), // Added border color
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: kTravailFuteMainColor), // Added focused border color
-                      ),
-                    ),
-                    maxLength: 4, // Limit to 4 digits
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Only accept digits
-                  ),
-                  const SizedBox(height: 20),
-                  _isLoading
-                    ? const CircularProgressIndicator(backgroundColor: kTravailFuteMainColor,color: kProgressBarInactiveColor,) // Show loading indicator
-                    : ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white, 
-                          backgroundColor: kTravailFuteMainColor, // Set text color
-                          padding:const EdgeInsets.symmetric(horizontal: 50, vertical: 15), // Increase button size
-                          textStyle: const TextStyle(fontSize: 18,fontFamily: "Poppins",fontWeight: FontWeight.bold), // Increase font size
+            child: SingleChildScrollView(
+              child: Center( // Added Center widget
+                child: SizedBox(
+                  width: 400, // Set container width
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center, // Center the column vertically
+                    children: <Widget>[
+                      // Add image placeholder
+                      const SizedBox(
+                        width: 100,
+                        height: 100,
+                        // color: Colors.grey, // Placeholder color
+                        child: Center(
+                          child: Icon(
+                            Icons.login, // Icon
+                            size: 50,
+                            color: kTravailFuteMainColor, // Icon color
+                          ),
                         ),
-                        child: const Text('Connexion'),
                       ),
-                ],
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.phone),
+                          labelText: 'Numero de telephone',
+                          labelStyle: const TextStyle(color: kTravailFuteMainColor), // Set text color
+                          border: const OutlineInputBorder(
+                            borderSide: BorderSide(color: kTravailFuteMainColor), // Added border color
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: kTravailFuteMainColor), // Added focused border color
+                          ),
+                          suffixIcon: _isPhoneValid
+                              ? const Icon(Icons.check, color: Colors.green)
+                              : null, // Add tick icon if phone number is valid
+                        ),
+                        maxLength: 10, // Limit to 10 digits
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly, // Only accept digits
+                          LengthLimitingTextInputFormatter(10), // Ensure exactly 10 digits
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock),
+                          labelText: 'PIN de 4 chiffres',
+                          labelStyle: const TextStyle(color: kTravailFuteMainColor), // Set text color
+                          border: const OutlineInputBorder(
+                            borderSide: BorderSide(color: kTravailFuteMainColor), // Added border color
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: kTravailFuteMainColor), // Added focused border color
+                          ),
+                          suffixIcon: _isPinValid
+                              ? const Icon(Icons.check, color: Colors.green)
+                              : null, // Add tick icon if PIN is valid
+                        ),
+                        maxLength: 4, // Limit to 4 digits
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Only accept digits
+                      ),
+                      const SizedBox(height: 20),
+                      _isLoading
+                        ? const CircularProgressIndicator(backgroundColor: kTravailFuteMainColor,color: kProgressBarInactiveColor,) // Show loading indicator
+                        : ElevatedButton(
+                            onPressed: _login,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white, 
+                              backgroundColor: kTravailFuteMainColor, // Set text color
+                              padding:const EdgeInsets.symmetric(horizontal: 50, vertical: 15), // Increase button size
+                              textStyle: const TextStyle(fontSize: 18,fontFamily: "Poppins",fontWeight: FontWeight.bold), // Increase font size
+                            ),
+                            child: const Text('Connexion'),
+                          ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

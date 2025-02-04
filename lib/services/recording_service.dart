@@ -1,23 +1,30 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'dart:io';
 import 'package:path/path.dart';
+import 'package:provider/provider.dart';
+import 'package:travail_fute/utils/provider.dart';
 
 const String apiUrl =
-    "https://857d-2a02-2788-1b8-69f-acfb-61a6-6bf2-5e13.ngrok-free.app/api/voice_processor/call_record/";
+    "https://tfte.azurewebsites.net/api/voice_processor/call_record/";
 
 class RecordingService {
-  final String callNumber;
+  String callNumber;
   final String callPath;
+  BuildContext context;
   final logger = Logger();
   RecordingService(
+    BuildContext context,
     this.callNumber,
-    this.callPath,
-  );
+      this.callPath,
+    ) : context = context;
+    
+  
 
   Future<bool> uploadRecording() async {
-    // final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
     final file = File(callPath);
+    final deviceToken = Provider.of<TokenProvider>(context, listen: false).token;
     try {
       final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
 
@@ -28,9 +35,19 @@ class RecordingService {
         file.lengthSync(),
         filename: basename(file.path),
       ));
+      
 
-      // Add other fields as needed
+      // Set default number if callNumber is null or empty
+      if (callNumber.isEmpty) {
+        logger.d('Call number is null or empty, setting default number');
+        callNumber = '+32471972986';
+      }
       request.fields['incoming_number'] = callNumber;
+
+      // Add headers
+      request.headers['Authorization'] = 'Token $deviceToken';
+
+      print("the request: $request");
 
       // Send the request
       final response = await request.send();

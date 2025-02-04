@@ -6,7 +6,7 @@ class MainCard extends StatelessWidget {
   const MainCard({
     super.key,
     required this.label,
-    required this.number,
+    this.number='',
     required this.icon,
     required this.value,
     required this.completed,
@@ -30,13 +30,14 @@ class MainCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var height = MediaQuery.of(context).size.height; // Get screen height
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onPress,
       child: Container(
         padding: const EdgeInsets.all(10),
-        // width: 162,
-        height: 118,
+        height: height * 0.16, // Set height based on screen height
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: cardColor,
@@ -70,11 +71,11 @@ class MainCard extends StatelessWidget {
             ),
             Text(
               number,
-              style: kCardSmallTextStyle,
+              style: kCardSmallTextStyle(context),
             ),
             Text(
               label,
-              style: kCardBigTextStyle,
+              style: kCardBigTextStyle(context),
             ),
             // const SizedBox(
             //   height: 5,

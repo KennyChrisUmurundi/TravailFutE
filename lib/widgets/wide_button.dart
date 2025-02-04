@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/constants.dart'; // Import the constants file
 
 // ignore: must_be_immutable
 class WideButton extends StatefulWidget {
@@ -45,8 +45,8 @@ class _WideButtonState extends State<WideButton> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        width: 120,
-        height: 32,
+        width: MediaQuery.of(context).size.width * 0.3, // Responsive width
+        height: MediaQuery.of(context).size.height * 0.06, // Responsive height
         decoration: BoxDecoration(
           color: widget.buttonColor,
           borderRadius: BorderRadius.circular(8),
@@ -70,7 +70,7 @@ class _WideButtonState extends State<WideButton> {
             widget.title,
             style: TextStyle(
               color: widget.textColor,
-              fontSize: 14,
+              fontSize: getResponsiveFontSize(context, 10), // Responsive font size
               fontWeight: FontWeight.w500,
               fontFamily: 'Poppins',
             ),

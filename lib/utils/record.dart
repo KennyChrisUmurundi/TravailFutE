@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:travail_fute/services/recording_service.dart';
@@ -9,6 +11,10 @@ class Recording {
 
   String audioPath = "";
   late final String number;
+  late final String deviceToken; // Add deviceToken
+
+  late final BuildContext context;
+  Recording(this.context); // Add deviceToken to constructor
 
   void startRecording() async {
     final appDirectory = await getApplicationDocumentsDirectory();
@@ -30,17 +36,20 @@ class Recording {
     }
   }
 
-  Future<void> stopRecording(number) async {
+  Future<void> stopRecording([String? number]) async {
     logger.d("Stopping record function Check");
+    logger.d("number: $number");
     await record.stop();
     //TODO: Send to Api, then reset the audiopath
     logger.i("INITIALIZING UPLOAD RECORD FUNTION");
 
     try {
-      final recordingService = RecordingService(number, audioPath);
+      print("SENDING REQUEST TO UPLOAD RECORDING");
+      final recordingService = RecordingService(context, number ?? '', audioPath); // Pass context, deviceToken and handle default number
+  // Pass context, deviceToken and handle default number
       recordingService.uploadRecording();
     } catch (e) {
-      logger.d(e);
+      logger.d("FAILED TO UPLOAD RECORDING $e");
     }
 
     audioPath = "";

@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/login.dart';
-import 'package:travail_fute/widgets/botom_nav.dart';
-import 'package:travail_fute/widgets/foab.dart';
-import 'screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
+import 'utils/provider.dart';
 
 void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TokenProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 // TODO: I NEED TO GET THE DEVICE ID OR SERIAL NUMBER FIRST
@@ -27,6 +33,7 @@ Future<String?> getAndroidDeviceId() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  
   @override
   Widget build(BuildContext context) {
     FlutterNativeSplash.remove();

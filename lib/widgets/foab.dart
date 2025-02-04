@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/utils/record.dart';
 
 class MyCenteredFAB extends StatefulWidget {
-  const MyCenteredFAB({super.key});
+
+  const MyCenteredFAB({context,super.key});
+  
 
   @override
   State<MyCenteredFAB> createState() => _MyCenteredFABState();
@@ -11,6 +16,13 @@ class MyCenteredFAB extends StatefulWidget {
 
 class _MyCenteredFABState extends State<MyCenteredFAB> {
   bool _isRecording = false;
+  late final record;
+
+  @override
+  void initState() {
+    super.initState();
+    record = Recording(context);
+  }
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
@@ -19,8 +31,13 @@ class _MyCenteredFABState extends State<MyCenteredFAB> {
         setState(() {
           _isRecording = !_isRecording;
           if (_isRecording) {
-            // Record voice like a Siri stuff
-          } else {}
+            record.startRecording();
+            print("Recording started");
+          } else {
+            // _isRecording = !_isRecording;
+            record.stopRecording();
+            print("Recording stopped");
+          }
         });
         //
       },
