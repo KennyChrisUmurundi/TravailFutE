@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/providers/message_provider.dart';
 import 'package:travail_fute/screens/login.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +14,8 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => TokenProvider()),
+      ChangeNotifierProvider(create: (_) => TokenProvider()),
+      ChangeNotifierProvider(create: (context) => MessageProvider()),
       ],
       child: const MyApp(),
     ),
@@ -31,9 +34,46 @@ Future<String?> getAndroidDeviceId() async {
   return deviceId;
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
-  
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  static const platform = MethodChannel('sms_channel');
+  final logger = Logger();
+
+  Future<void> fetchSms() async {
+    final messageProvider = Provider.of<MessageProvider>(context, listen: false);
+
+    try {
+      final List<dynamic> result = await platform.invokeMethod('getSms');
+
+      // Convert to List<Map<String, dynamic>> safely
+      final List<Map<String, dynamic>> messages = result.map((item) {
+        return Map<String, dynamic>.from(item);
+      }).toList();
+
+      // Convert all values to strings
+      final List<Map<String, String>> stringMessages = messages.map((message) {
+        return message.map((key, value) => MapEntry(key, value.toString()));
+      }).toList();
+
+      messageProvider.setMessages(stringMessages);
+    } on PlatformException catch (e) {
+      messageProvider.setMessages([]);
+      logger.e("Failed to get SMS: '${e.message}'.");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSms();
+  }
+
   @override
   Widget build(BuildContext context) {
     FlutterNativeSplash.remove();

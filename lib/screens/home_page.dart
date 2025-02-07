@@ -18,7 +18,7 @@ import 'package:logger/logger.dart';
 import 'clients.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
 import 'messages_screen.dart';
-import 'package:flutter_sms_manager/flutter_sms_manager.dart';
+// import 'package:flutter_sms_manager/flutter_sms_manager.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> user; // Add user parameter
@@ -40,9 +40,9 @@ void waitPermission() async {
 class _HomePageState extends State<HomePage> {
   PhoneState status = PhoneState.nothing();
   late PhoneStateService phoneStateService;
-  final _smsListenerPlugin = Smswatcher();
+  // final _smsListenerPlugin = Smswatcher();
   Future<List<Map<String, String>>?>? sms;
-  List<Map<String, dynamic>> _smsList = [];
+  // List<Map<String, dynamic>> _smsList = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -51,41 +51,41 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     waitPermission();
-    sms = _smsListenerPlugin.getAllSMS();
-    _smsListenerPlugin.getStreamOfSMS();
+    // sms = _smsListenerPlugin.getAllSMS();
+    // _smsListenerPlugin.getStreamOfSMS();
     Logger.level = Level.debug;
     phoneStateService = PhoneStateService(context); // Initialize phoneStateService
     super.initState();
     phoneStateService.startListening();
-    _fetchSms();
+    // _fetchSms();
   }
 
-  Future<void> _fetchSms() async {
-    print("Fetching SMS");
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+  // Future<void> _fetchSms() async {
+  //   print("Fetching SMS");
+  //   setState(() {
+  //     _isLoading = true;
+  //     _errorMessage = '';
+  //   });
 
-    try {
+  //   try {
 
-      print("Fetching SMS2");
-      final smsList = await SmsManager.fetchSms();
-      print("lissssssssssssssssssssssssst $smsList");
-      setState(() {
-        _smsList = smsList;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        print(_errorMessage);
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+  //     print("Fetching SMS2");
+  //     final smsList = await SmsManager.fetchSms();
+  //     print("lissssssssssssssssssssssssst $smsList");
+  //     setState(() {
+  //       _smsList = smsList;
+  //     });
+  //   } catch (e) {
+  //     setState(() {
+  //       _errorMessage = e.toString();
+  //       print(_errorMessage);
+  //     });
+  //   } finally {
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
 
   @override
@@ -124,7 +124,7 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   children: [
                     WideButton(
-                      onPress: () => _fetchSms(),
+                      onPress: () => {},
                       title: 'Overview',
                       buttonColor: kTravailFuteMainColor,
                       textColor: kWhiteColor,
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     SizedBox(width: width * 0.03),
                     WideButton(
-                      onPress: () => _fetchSms(),
+                      onPress: () => () => {},
                       title: 'Chantiers',
                       buttonColor: kWhiteColor,
                       textColor: kTravailFuteSecondaryColor,
@@ -181,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => MessagesScreen(sms: sms!),
+                              builder: (context) => MessagesScreen(),
                             ),
                           );
                         },

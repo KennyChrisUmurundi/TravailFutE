@@ -17,13 +17,18 @@ class MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
+      ),
+      margin: EdgeInsets.zero,
+      color: Colors.white,
       child: ListTile(
         leading: CircleAvatar(
-          child: Text(title[0]), // Display the first letter of the sender's name
+        backgroundColor: [Colors.green, const Color.fromARGB(255, 224, 96, 139), const Color.fromARGB(255, 224, 139, 13), const Color.fromARGB(255, 172, 81, 188)][title.hashCode % 4],
+        child: Icon(Icons.person,color: Colors.white,), // Display the first letter of the sender's name
         ),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
+        title: Text(title, style: TextStyle(fontSize:14,fontWeight: FontWeight.bold,color: const Color.fromARGB(255, 32, 32, 32))),
+        subtitle: Text(subtitle, style: TextStyle(color: const Color.fromARGB(255, 71, 70, 70), fontSize: 12.0)),
         trailing: Text(trailing),
         onTap: onTap,
       ),

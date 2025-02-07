@@ -1,157 +1,83 @@
 import 'package:flutter/material.dart';
-import 'message_detail_screen.dart';
-import '../widgets/message_card.dart'; // Import the MessageCard widget
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:travail_fute/providers/message_provider.dart';
+import 'package:travail_fute/widgets/message_card.dart'; // Add this line to import MessageCard widget
+import 'package:travail_fute/screens/message_detail_screen.dart'; // Import MessageDetailScreen
 
 class MessagesScreen extends StatelessWidget {
-  final Future<List<Map<String, String>>?> sms;
-
-  MessagesScreen({required this.sms});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Messages', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // Add search functionality
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {
-              // Add more options
-            },
-          ),
-        ],
+        title: Text('Messages'),
       ),
-      body: FutureBuilder<List<Map<String, String>>?>(
-        future: sms,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No messages found.'));
-          } else {
-            var groupedMessages = snapshot.data!
-                .fold<Map<String, List<Map<String, String>>>>({}, (acc, message) {
-                  acc.putIfAbsent(message['sender']!, () => []).add(message);
-                  return acc;
-                });
+      body: Consumer<MessageProvider>(
+        builder: (context, messageProvider, child) {
+          final messages = messageProvider.messages;
+          print("First 5 messages: ${messages.take(5).toList()}");
+          final Map<String, List<Map<String, dynamic>>> groupedMessages = {};
+          final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
-            return ListView(
-              children: groupedMessages.entries.map((entry) {
-                var lastMessage = entry.value.last['body'] ?? 'No message body';
-                var subtitle = lastMessage.length > 20
-                    ? lastMessage.substring(lastMessage.length - 20)
-                    : lastMessage;
-                return MessageCard(
-                  title: entry.key,
-                  subtitle: subtitle,
-                  trailing: entry.value.last['date'] ?? '',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MessageDetailScreen(messages: entry.value),
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-            );
+          for (var message in messages) {
+            final sender = message['address'] ?? 'Unknown';
+            if (!groupedMessages.containsKey(sender)) {
+              groupedMessages[sender] = [];
+            }
+            groupedMessages[sender]!.add(message);
           }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add new message functionality
-        },
-        child: Icon(Icons.message),
-        backgroundColor: Colors.blue,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        onTap: (index) {
-          // Handle bottom navigation tap
-        },
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.archive),
-            label: 'Archived',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'Spam',
-          ),
-        ],
-      ),
-    );
-  }
-}
 
-class ChatBubble extends StatelessWidget {
-  final String message;
-  final String timestamp;
+          // Sort messages for each sender based on formattedDate in descending order
+          groupedMessages.forEach((sender, messages) {
+            messages.sort((a, b) {
+              final dateA = dateFormat.parse(a['formattedDate']!);
+              final dateB = dateFormat.parse(b['formattedDate']!);
+              return dateB.compareTo(dateA); // Sort in descending order
+            });
+          });
 
-  ChatBubble({required this.message, required this.timestamp});
+          // Sort senders based on the latest message date in descending order
+          final sortedSenders = groupedMessages.keys.toList();
+          sortedSenders.sort((a, b) {
+            final latestMessageA = groupedMessages[a]!.first;
+            final latestMessageB = groupedMessages[b]!.first;
+            final dateA = dateFormat.parse(latestMessageA['formattedDate']!);
+            final dateB = dateFormat.parse(latestMessageB['formattedDate']!);
+            return dateB.compareTo(dateA); // Sort in descending order
+          });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 4.0),
-      padding: EdgeInsets.all(4.0),
-      decoration: BoxDecoration(
-        color: Colors.blueAccent,
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            message,
-            style: TextStyle(color: Colors.white),
-          ),
-          SizedBox(height: 5.0),
-          Text(
-            timestamp,
-            style: TextStyle(color: Colors.white70, fontSize: 10.0),
-          ),
-        ],
-      ),
-    );
-  }
-}
+          return ListView.builder(
+            itemCount: sortedSenders.length,
+            itemBuilder: (context, index) {
+              final sender = sortedSenders[index];
+              final messagesFromSender = groupedMessages[sender]!;
 
-class MessageDetailScreen extends StatelessWidget {
-  final List<Map<String, String>> messages;
+              // Get the latest message
+              final latestMessage = messagesFromSender.first;
 
-  MessageDetailScreen({required this.messages});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Messages from ${messages.first['sender']}'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: ListView.builder(
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          var message = messages[index];
-          return ChatBubble(
-            message: message['body'] ?? 'No message body',
-            timestamp: message['date'] ?? '',
+              return MessageCard(
+                title: latestMessage['address'] != null && latestMessage['address']!.contains('+32')
+                  ? latestMessage['address']!.replaceFirst('+32', '0').replaceAllMapped(RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})'), (Match m) => '${m[1]} ${m[2]} ${m[3]} ${m[4]}')
+                  : latestMessage['address'] ?? '',
+                subtitle: latestMessage['body'] != null 
+                    ? latestMessage['body']!.substring(0, latestMessage['body']!.length > 16 ? 16 : latestMessage['body']!.length)
+                    : '',
+                trailing: DateFormat('d MMM').format(dateFormat.parse(latestMessage['formattedDate']!)),
+                onTap: () {
+                  // Navigate to message detail screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MessageDetailScreen(
+                        sentMessages: messagesFromSender.where((msg) => msg['type'] == 'sent').toList().cast<Map<String, String>>(),
+                        receivedMessages: messagesFromSender.where((msg) => msg['type'] == 'received').toList().cast<Map<String, String>>(),
+                        sender: sender,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           );
         },
       ),
