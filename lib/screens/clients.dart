@@ -190,7 +190,7 @@ class _ClientsListState extends State<ClientsList> {
         ],
       ),
       bottomNavigationBar: const BottomNavBar(),
-      floatingActionButton: const MyCenteredFAB(),
+      floatingActionButton: const RecordFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

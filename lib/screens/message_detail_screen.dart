@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:travail_fute/utils/openai.dart';
 import 'package:travail_fute/widgets/foab.dart';
 
 class MessageDetailScreen extends StatelessWidget {
@@ -13,6 +14,7 @@ class MessageDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final allMessages = [...sentMessages, ...receivedMessages];
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+    
 
     // Parse the formattedDate and store it in a new key 'dateTime'
     for (var message in allMessages) {
@@ -34,7 +36,12 @@ class MessageDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('$sender'),
+        title: Text(
+          sender.startsWith('+32') 
+        ? sender.replaceFirst('+32', '0').replaceAllMapped(RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})'), (Match m) => '${m[1]} ${m[2]} ${m[3]} ${m[4]}')
+        : sender,
+          style: TextStyle(fontSize: 16),
+        ),
       ),
       body: Column(
         children: [
@@ -66,44 +73,9 @@ class MessageDetailScreen extends StatelessWidget {
               },
             ),
           ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              width: 250,
-              color: Colors.white,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      style: TextStyle(fontSize: 12),
-                      decoration: InputDecoration(
-                        hintText: 'message',
-                        // border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                        ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: () {
-                    // Handle send button press
-                    print('Send button pressed');
-                  },
-                ),
-              ],
-            ),
-                    ),
-          ),
       ],
     ),
-    floatingActionButton: MyCenteredFAB(),
+    floatingActionButton: RecordFAB(),
     // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
   );
 }

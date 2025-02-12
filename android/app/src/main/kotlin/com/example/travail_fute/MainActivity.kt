@@ -12,13 +12,10 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.Date
 import java.util.Locale
 import java.text.SimpleDateFormat
-import android.telephony.TelephonyManager
 
 class MainActivity : FlutterActivity() {
     private val SMS_CHANNEL = "sms_channel"
-    private val PHONE_CHANNEL = "phone_channel"
     private val REQUEST_CODE_SMS_PERMISSION = 1
-    private val REQUEST_CODE_PHONE_PERMISSION = 2
     private var resultCallback: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -27,35 +24,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getSms" -> {
-                    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
                         val smsList = getSms()
                         result.success(smsList)
                     } else {
                         resultCallback = result
-                        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), REQUEST_CODE_SMS_PERMISSION)
+                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_SMS), REQUEST_CODE_SMS_PERMISSION)
                     }
                 }
             }
         }
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PHONE_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "getPhoneNumber" -> {
-                    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        val phoneNumber = getPhoneNumber()
-                        result.success(phoneNumber)
-                    } else {
-                        resultCallback = result
-                        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_PHONE_STATE), REQUEST_CODE_PHONE_PERMISSION)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getPhoneNumber(): String? {
-        val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-        return telephonyManager.line1Number
     }
 
     private fun getSms(): List<Map<String, Any>> {
@@ -98,7 +76,7 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // ✅ **Sort by date in ascending order**
+        // Sort by date in ascending order
         smsList.sortBy { it["date"] as Long }
 
         return smsList.map { sms ->
@@ -110,17 +88,10 @@ class MainActivity : FlutterActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             REQUEST_CODE_SMS_PERMISSION -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED)) {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     resultCallback?.success(getSms())
                 } else {
                     resultCallback?.error("PERMISSION_DENIED", "SMS permission denied", null)
-                }
-            }
-            REQUEST_CODE_PHONE_PERMISSION -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED)) {
-                    resultCallback?.success(getPhoneNumber())
-                } else {
-                    resultCallback?.error("PERMISSION_DENIED", "Phone state permission denied", null)
                 }
             }
         }

@@ -23,16 +23,16 @@ void main() {
 }
 
 // TODO: I NEED TO GET THE DEVICE ID OR SERIAL NUMBER FIRST
-Future<String?> getAndroidDeviceId() async {
-  String? deviceId;
-  try {
-    deviceId =
-        await const MethodChannel('your_channel_name').invokeMethod('getDeviceId');
-  } on PlatformException catch (e) {
-    print('Error getting Android device ID: $e');
-  }
-  return deviceId;
-}
+// Future<String?> getAndroidDeviceId() async {
+//   String? deviceId;
+//   try {
+//     deviceId =
+//         await const MethodChannel('your_channel_name').invokeMethod('getDeviceId');
+//   } on PlatformException catch (e) {
+//     print('Error getting Android device ID: $e');
+//   }
+//   return deviceId;
+// }
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

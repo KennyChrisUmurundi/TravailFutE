@@ -3,11 +3,15 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:travail_fute/services/credential_service.dart';
 import 'package:travail_fute/services/recording_service.dart';
+import 'package:travail_fute/utils/openai.dart';
 
 class Recording {
   final logger = Logger();
   final record =  AudioRecorder();
+  final OpenAI openAI = OpenAI();
+  final CredentialService credentialService = CredentialService();
 
   String audioPath = "";
   late final String number;
@@ -15,6 +19,10 @@ class Recording {
 
   late final BuildContext context;
   Recording(this.context); // Add deviceToken to constructor
+
+  String given_speech = "";
+  List<Map<String, String>> messages = [];
+  late String response_message;
 
   void startRecording() async {
     final appDirectory = await getApplicationDocumentsDirectory();
@@ -38,20 +46,24 @@ class Recording {
 
   Future<void> stopRecording([String? number]) async {
     logger.d("Stopping record function Check");
-    logger.d("number: $number");
-    await record.stop();
+    try {
+      await record.stop();
+    } catch (e) {
+      logger.e("Error stopping recording: $e");
+    }
+    checkRecordingStatus();
     //TODO: Send to Api, then reset the audiopath
     logger.i("INITIALIZING UPLOAD RECORD FUNTION");
-
-    try {
-      print("SENDING REQUEST TO UPLOAD RECORDING");
-      final recordingService = RecordingService(context, number ?? '', audioPath); // Pass context, deviceToken and handle default number
-  // Pass context, deviceToken and handle default number
-      recordingService.uploadRecording();
-    } catch (e) {
-      logger.d("FAILED TO UPLOAD RECORDING $e");
-    }
-
+    
+    given_speech = await openAI.transcribeAudio(audioPath);
+    messages = [
+      {'role': 'system', 'content': 'You are TravailFute AI'},
+      {'role': 'user', 'content': given_speech},
+    ];
+    response_message = await openAI.generateChatCompletion(messages);
+    print("THE RESPONSE MESSAGE  $response_message");
+    final outputFilePath = await openAI.getWritableFilePath('speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
+    await openAI.textToSpeech(response_message, outputFilePath);
     audioPath = "";
     //, eventually delete the record on the device so not to make it full?
     // final recordService = RecordingService(callNumber, callPath)

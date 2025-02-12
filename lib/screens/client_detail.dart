@@ -116,7 +116,7 @@ class ClientDetail extends StatelessWidget {
             )),
       ]),
       bottomNavigationBar: const BottomNavBar(),
-      floatingActionButton: const MyCenteredFAB(),
+      floatingActionButton: const RecordFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

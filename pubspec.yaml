@@ -13,7 +13,10 @@ dependencies:
     flutter:
         sdk: flutter
     intl: 0.19.0
+    shared_preferences: ^2.5.1
+    flutter_dotenv: ^5.0.2
     provider: ^6.0.5
+    flutter_tts: ^3.2.2
     cupertino_icons: ^1.0.2
     flutter_native_splash: ^2.3.2
     phone_state: ^2.0.1
@@ -41,6 +44,7 @@ flutter:
     # To add assets to your application, add an assets section, like this:
     assets:
         - assets/images/splash.png
+        - .env
 
     # An image asset can refer to one or more resolution-specific "variants", see
     # https://flutter.dev/assets-and-images/#resolution-aware

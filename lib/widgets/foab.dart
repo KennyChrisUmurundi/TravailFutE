@@ -5,16 +5,16 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:travail_fute/utils/provider.dart';
 import 'package:travail_fute/utils/record.dart';
 
-class MyCenteredFAB extends StatefulWidget {
+class RecordFAB extends StatefulWidget {
 
-  const MyCenteredFAB({context,super.key});
+  const RecordFAB({context,super.key});
   
 
   @override
-  State<MyCenteredFAB> createState() => _MyCenteredFABState();
+  State<RecordFAB> createState() => _RecordFABState();
 }
 
-class _MyCenteredFABState extends State<MyCenteredFAB> {
+class _RecordFABState extends State<RecordFAB> {
   bool _isRecording = false;
   late final record;
 
@@ -32,11 +32,9 @@ class _MyCenteredFABState extends State<MyCenteredFAB> {
           _isRecording = !_isRecording;
           if (_isRecording) {
             record.startRecording();
-            print("Recording started");
           } else {
             // _isRecording = !_isRecording;
             record.stopRecording();
-            print("Recording stopped");
           }
         });
         //

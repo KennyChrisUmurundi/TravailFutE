@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/utils/provider.dart';
 
@@ -11,7 +10,6 @@ const String apiUrl =
 class ClientService {
   Future<Map<String, dynamic>> getClientList(context, {String? url}) async { // Add optional url parameter
     final token = Provider.of<TokenProvider>(context, listen: false).token;
-    print("CLIEEETNNNNNNNNNNNNNNNTTTTT::::::::::$token");
     final headers = {
       'Authorization': 'Token $token',
       'Content-Type': 'application/json',
