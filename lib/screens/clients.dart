@@ -189,8 +189,8 @@ class _ClientsListState extends State<ClientsList> {
           if (isLoading) const Loading(), // Add loading widget
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(),
-      floatingActionButton: const RecordFAB(),
+      bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
+      // floatingActionButton: const RecordFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

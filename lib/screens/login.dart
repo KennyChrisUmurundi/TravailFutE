@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // Add this import
+import 'package:provider/provider.dart';
+import 'dart:ui';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/services/credential_service.dart'; // Update with your actual project name
 import 'dart:convert';
 import 'home_page.dart';
 import 'package:flutter/services.dart'; // Added import for FilteringTextInputFormatter
-import 'package:travail_fute/widgets/loading.dart'; // Add this import
 // import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final responseData = jsonDecode(response.body);
       final user = responseData['user']; // Store the user instance
       final deviceToken = responseData['device_token']; // Store the device token
-
+      
       // Save user and device token in SharedPreferences
       // final prefs = await SharedPreferences.getInstance();
       // await prefs.setString('user', jsonEncode(user));

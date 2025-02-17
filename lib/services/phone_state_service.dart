@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
-import 'package:travail_fute/utils/provider.dart';
 import 'package:travail_fute/utils/record.dart';
 import 'package:travail_fute/utils/phone_state.dart';
 

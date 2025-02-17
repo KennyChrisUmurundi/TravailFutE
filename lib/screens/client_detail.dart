@@ -115,8 +115,8 @@ class ClientDetail extends StatelessWidget {
               ],
             )),
       ]),
-      bottomNavigationBar: const BottomNavBar(),
-      floatingActionButton: const RecordFAB(),
+      bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
+      // floatingActionButton: const RecordFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

@@ -1,14 +1,14 @@
 import 'dart:convert';
-
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/screens/login.dart';
 
-const String apiUrl =
-    "https://tfte.azurewebsites.net/api/clients/";
+const String apiUrl = "https://tfte.azurewebsites.net/api/clients/";
 
 class ClientService {
-  Future<Map<String, dynamic>> getClientList(context, {String? url}) async { // Add optional url parameter
+  Future<Map<String, dynamic>> getClientList(BuildContext context, {String? url}) async {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
     final headers = {
       'Authorization': 'Token $token',
@@ -27,6 +27,12 @@ class ClientService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        final responseData = json.decode(response.body);
+        if (responseData['detail'] == 'Invalid token or user not found.') {
+          _redirectToLogin(context);
+        }
+        throw Exception('Failed to load client list: ${response.body}');
       } else {
         throw Exception('Failed to load client list: ${response.body}');
       }
@@ -35,10 +41,11 @@ class ClientService {
     }
   }
 
-  Future<String> createClient(String deviceToken, Map<String, dynamic> data) async {
+  Future<String> createClient( BuildContext context,Map<String, dynamic> data) async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
     final headers = {
       'Content-Type': 'application/json',
-      'Authorization': 'Token $deviceToken',
+      'Authorization': 'Token $token',
     };
 
     final bodyData = jsonEncode({
@@ -48,18 +55,32 @@ class ClientService {
       "phone_number": data["Telephone"],
     });
 
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: headers,
-      body: bodyData,
-    );
-    print("Response Headers: ${response.body}");
-    final responseData = json.decode(response.body);
-    if (response.statusCode == 201) {
-      return responseData['id'].toString();
-    } else {
-      // Handle API error
-     return responseData;
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: bodyData,
+      );
+      print("Response Headers: ${response.body}");
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 201) {
+        return responseData['id'].toString();
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        if (responseData['detail'] == 'Invalid token or user not found.') {
+          _redirectToLogin(context);
+        }
+        throw Exception('Failed to create client: ${response.body}');
+      } else {
+        throw Exception('Failed to create client: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
     }
+  }
+
+  void _redirectToLogin(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:travail_fute/services/credential_service.dart';
-import 'package:travail_fute/services/recording_service.dart';
 import 'package:travail_fute/utils/openai.dart';
 
 class Recording {
@@ -22,7 +22,7 @@ class Recording {
 
   String given_speech = "";
   List<Map<String, String>> messages = [];
-  late String response_message;
+  late Map<String, dynamic> response_message;
 
   void startRecording() async {
     final appDirectory = await getApplicationDocumentsDirectory();
@@ -44,7 +44,11 @@ class Recording {
     }
   }
 
-  Future<void> stopRecording([String? number]) async {
+  Future<String> loadPrompt() async {
+  return await rootBundle.loadString('assets/prompts/notification_prompt.txt');
+}
+
+  Future<String> stopRecording([String? number]) async {
     logger.d("Stopping record function Check");
     try {
       await record.stop();
@@ -56,17 +60,21 @@ class Recording {
     logger.i("INITIALIZING UPLOAD RECORD FUNTION");
     
     given_speech = await openAI.transcribeAudio(audioPath);
+    String promptTemplate = await loadPrompt();
+    promptTemplate.replaceAll("{USER_VOICE_TEXT}", given_speech);
     messages = [
-      {'role': 'system', 'content': 'You are TravailFute AI'},
+      {'role': 'developer', "content": promptTemplate},
       {'role': 'user', 'content': given_speech},
     ];
-    response_message = await openAI.generateChatCompletion(messages);
+    Map<String, dynamic> response_message = await openAI.generateChatCompletion(messages);
+    Map<String, dynamic> notificationData = response_message["notification_data"];
     print("THE RESPONSE MESSAGE  $response_message");
-    final outputFilePath = await openAI.getWritableFilePath('speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
-    await openAI.textToSpeech(response_message, outputFilePath);
+    // final outputFilePath = await openAI.getWritableFilePath('speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
+    // await openAI.textToSpeech(response_message["user_response"], outputFilePath);
     audioPath = "";
     //, eventually delete the record on the device so not to make it full?
     // final recordService = RecordingService(callNumber, callPath)
+    return given_speech;
   }
 
   Future<bool> checkRecordingStatus() async {

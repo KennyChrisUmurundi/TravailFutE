@@ -3,36 +3,32 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/providers/message_provider.dart';
+import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/screens/login.dart';
+import 'package:travail_fute/screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
 import 'utils/provider.dart';
 
-void main() {
+void main() async{
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  final tokenProvider = TokenProvider();
+  final userProvider = UserProvider();
+
+  await tokenProvider.loadToken();
+  await userProvider.loadUser();
   runApp(
     MultiProvider(
       providers: [
-      ChangeNotifierProvider(create: (_) => TokenProvider()),
+      ChangeNotifierProvider(create: (_) => tokenProvider),
       ChangeNotifierProvider(create: (context) => MessageProvider()),
+      ChangeNotifierProvider(create: (context) => userProvider),
       ],
       child: const MyApp(),
     ),
   );
 }
-
-// TODO: I NEED TO GET THE DEVICE ID OR SERIAL NUMBER FIRST
-// Future<String?> getAndroidDeviceId() async {
-//   String? deviceId;
-//   try {
-//     deviceId =
-//         await const MethodChannel('your_channel_name').invokeMethod('getDeviceId');
-//   } on PlatformException catch (e) {
-//     print('Error getting Android device ID: $e');
-//   }
-//   return deviceId;
-// }
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -117,13 +113,34 @@ class RootScaffold extends StatelessWidget {
         elevation: 0.3,
         backgroundColor: Colors.white,
       ),
-      body: LoginScreen(),
-      // bottomNavigationBar: const BottomNavBar(),
-      // floatingActionButton: const MyCenteredFAB(),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      body: Consumer2<TokenProvider, UserProvider>(
+        builder: (context, tokenProvider, userProvider, child) {
+          if (tokenProvider.token.isEmpty || userProvider.user == null) {
+            // ✅ Show a loading screen instead of flashing login page
+            return const LoginScreen();
+          }
+
+          // ✅ Navigate to HomePage once token and user data are ready
+          Future.microtask(() {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => HomePage(
+                  deviceToken: tokenProvider.token,
+                  user: userProvider.user!,
+                ),
+              ),
+            );
+          });
+
+          return const LoginScreen(); // Prevents UI flicker
+        },
+      ),
     );
   }
 }
+
+
+
 
 // Navigator(
 //         onGenerateRoute: (settings) {

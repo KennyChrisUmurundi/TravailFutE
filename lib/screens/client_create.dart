@@ -146,7 +146,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
                           setState(() {
                             isLoading = true; // Set loading to true
                           });
-                          await clientService.createClient(widget.deviceToken, _formKey.currentState!.value);
+                          await clientService.createClient(context, _formKey.currentState!.value);
                           setState(() {
                             isLoading = false; // Set loading to false
                           });
@@ -163,7 +163,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> {
               ),
             ),
           ),
-          bottomNavigationBar: const BottomNavBar(),
+          bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
           // floatingActionButton: const MyCenteredFAB(),
           // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         ),

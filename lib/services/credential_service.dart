@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/utils/provider.dart';
 
 const String apiUrlLogin = "https://tfte.azurewebsites.net/api/credentials/login/";
@@ -25,7 +25,8 @@ class CredentialService {
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       globalDeviceToken = responseBody["device_token"];
-      Provider.of<TokenProvider>(context, listen: false).setToken(globalDeviceToken);
+      Provider.of<TokenProvider>(context, listen: false).saveToken(globalDeviceToken);
+      Provider.of<UserProvider>(context, listen: false).saveUser(responseBody["user"]);
     }
 
     return response;

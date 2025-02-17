@@ -47,33 +47,67 @@ class OpenAI {
       String responseBody = await response.stream.bytesToString();
       return responseBody;
     } else {
-      throw Exception('❌ Error transcribing audio: ${response.statusCode}');
+      try {
+        String responseBody = await response.stream.bytesToString();
+        logger.e('❌ Error transcribing audio: $responseBody');
+        throw Exception('❌ Error transcribing audio: ${response.statusCode}');
+      } catch (e) {
+        logger.e('❌ Exception caught: $e');
+        throw Exception('❌ Error transcribing audio: $e');
+      }
     }
   }
 
-  Future<String> generateChatCompletion(List<Map<String, String>> messages) async {
-    await _initializeApiKey();
-    if (_apiKey == null || _apiKey!.isEmpty) throw Exception("❌ API key is not initialized");
+  Future<Map<String, dynamic>> generateChatCompletion(List<Map<String, String>> messages) async {
+  await _initializeApiKey();
+  if (_apiKey == null || _apiKey!.isEmpty) throw Exception("❌ API key is not initialized");
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat/completions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
-      },
-      body: jsonEncode({
-        'model': 'gpt-4o',
-        'messages': messages,
-      }),
-    );
+  final response = await http.post(
+    Uri.parse('$baseUrl/chat/completions'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $_apiKey',
+    },
+    body: jsonEncode({
+      'model': 'gpt-4o',
+      'messages': messages,
+    }),
+  );
 
-    if (response.statusCode == 200) {
-      logger.i('✅ Chat completion generated successfully');
-      return jsonDecode(response.body)['choices'][0]['message']['content'];
-    } else {
-      throw Exception('❌ Error generating chat completion: ${response.statusCode}');
+  if (response.statusCode == 200) {
+    logger.i('✅ Chat completion generated successfully');
+    final responseBody = jsonDecode(response.body);
+
+    // Ensure choices exist and are not empty
+    if (responseBody['choices'] == null || responseBody['choices'].isEmpty) {
+      throw Exception('❌ No response received from OpenAI.');
     }
+
+    // Extract the assistant's message content
+    String? rawContent = responseBody['choices'][0]['message']['content'];
+
+    // Ensure content is not null
+    if (rawContent == null || rawContent.isEmpty) {
+      throw Exception('❌ OpenAI returned an empty response.');
+    }
+
+    // Remove code block markers if present
+    if (rawContent.startsWith("```json")) {
+      rawContent = rawContent.replaceAll("```json", "").replaceAll("```", "").trim();
+    }
+
+    try {
+      // Convert the extracted JSON string into a Dart map
+      Map<String, dynamic> parsedJson = jsonDecode(rawContent);
+
+      return parsedJson;
+    } catch (e) {
+      throw Exception('❌ Error parsing JSON in content: $e');
+    }
+  } else {
+    throw Exception('❌ Error generating chat completion: ${response.statusCode}');
   }
+}
 
   Future<void> speak(String text) async {
     await flutterTts.setLanguage("en-US");
@@ -94,7 +128,7 @@ class OpenAI {
       body: jsonEncode({
         'model': 'tts-1',
         'input': inputText,
-        'voice': 'nova',
+        'voice': 'alloy',
       }),
     );
 
@@ -125,26 +159,5 @@ class OpenAI {
 void main() async {
   final openAI = OpenAI();
 
-  // Example usage
-  try {
-    final messages = [
-      {'role': 'system', 'content': 'You are a helpful assistant.'},
-      {'role': 'user', 'content': 'Write a haiku about recursion in programming.'},
-    ];
-    final chatCompletion = await openAI.generateChatCompletion(messages);
-    print(chatCompletion);
-
-    // Play the generated text
-    await openAI.speak(chatCompletion);
-
-    // Convert text to speech and save to file
-    final outputFilePath = await openAI.getWritableFilePath('speech.mp3');
-    await openAI.textToSpeech(chatCompletion, outputFilePath);
-
-    // Play the saved audio file
-    await openAI.playAudio(outputFilePath);
-  } catch (e) {
-    print(e);
-  }
 }
 
