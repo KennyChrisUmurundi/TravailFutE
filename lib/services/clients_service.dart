@@ -41,7 +41,7 @@ class ClientService {
     }
   }
 
-  Future<String> createClient( BuildContext context,Map<String, dynamic> data) async {
+  Future<String> createClient(BuildContext context, Map<String, dynamic> data) async {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
     final headers = {
       'Content-Type': 'application/json',
@@ -72,6 +72,73 @@ class ClientService {
         throw Exception('Failed to create client: ${response.body}');
       } else {
         throw Exception('Failed to create client: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getClientByPhone(BuildContext context, String phoneNumber) async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+    final headers = {
+      'Authorization': 'Token $token',
+      'Content-Type': 'application/json',
+    };
+
+    final url = "$apiUrl/phone/?phone_number=$phoneNumber";
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
+      print("Response Headers: ${response.headers}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else if (response.statusCode == 401 || response.statusCode == 403 || response.statusCode == 500) {
+        final responseData = json.decode(response.body);
+        if (responseData['detail'] == 'Invalid token or user not found.') {
+          _redirectToLogin(context);
+        }
+        throw Exception('Failed to load client: ${response.body}');
+      } else {
+        throw Exception('Failed to load client: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<void> updateClient(BuildContext context, String clientId, Map<String, dynamic> data) async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Token $token',
+    };
+
+    final bodyData = jsonEncode(data);
+
+    try {
+      final response = await http.put(
+        Uri.parse('$apiUrl/manage/$clientId/'),
+        headers: headers,
+        body: bodyData,
+      );
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        print('Client updated successfully');
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        final responseData = json.decode(response.body);
+        if (responseData['detail'] == 'Invalid token or user not found.') {
+          _redirectToLogin(context);
+        }
+        throw Exception('Failed to update client: ${response.body}');
+      } else {
+        throw Exception('Failed to update client: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error: $e');

@@ -33,14 +33,7 @@ class ClientCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: kTravailFuteMainColor,
-              child: Text(
-                client['first_name'][0].toUpperCase() +
-                    client['last_name'][0].toUpperCase(),
-                style: const TextStyle(
-                  color: kWhiteColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Icon(Icons.person, color: kWhiteColor),
             ),
             const SizedBox(
               width: 15,
@@ -49,26 +42,26 @@ class ClientCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.contacts,
-                      size: 12,
-                      color: kTravailFuteMainColor,
-                    ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    Text(
-                      client['first_name'] + ' ' + client['last_name'],
-                      style: const TextStyle(
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.bold,
-                          color: kTravailFuteSecondaryColor,
-                          fontSize: 14),
-                    ),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     const Icon(
+                //       Icons.contacts,
+                //       size: 12,
+                //       color: kTravailFuteMainColor,
+                //     ),
+                //     const SizedBox(
+                //       width: 8,
+                //     ),
+                //     Text(
+                //       (client['first_name'] ?? '') + ' ' + (client['last_name'] ?? ''),
+                //       style: const TextStyle(
+                //           fontFamily: "Poppins",
+                //           fontWeight: FontWeight.bold,
+                //           color: kTravailFuteSecondaryColor,
+                //           fontSize: 14),
+                //     ),
+                //   ],
+                // ),
                 Row(
                   children: [
                     const Icon(
@@ -80,12 +73,12 @@ class ClientCard extends StatelessWidget {
                       width: 8,
                     ),
                     Text(
-                      client['address'].toString(),
+                        "${client['address_street'] ?? ''} ${client['address_town'] ?? 'Addresse inconnue'}",
                       style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
-                          fontSize: 12),
+                          fontSize: 10),
                     ),
                   ],
                 ),
@@ -100,7 +93,7 @@ class ClientCard extends StatelessWidget {
                       width: 8,
                     ),
                     Text(
-                      "${client['phone_number']}",
+                      "${client['phone_number'].replaceFirst('+32', '0').replaceAllMapped(RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})'), (Match m) => '${m[1]} ${m[2]} ${m[3]} ${m[4]}')}",
                       style: const TextStyle(
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.bold,
@@ -111,10 +104,6 @@ class ClientCard extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Text("numero"),
-            // Text("email"),
-            // Text("registered"),
           ],
         ),
       ),

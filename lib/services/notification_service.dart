@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:travail_fute/screens/login.dart';
 
 const String apiUrl = "https://tfte.azurewebsites.net/api/";
 
@@ -34,21 +36,40 @@ class NotificationService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchNotifications() async {
-    final url = Uri.parse('$apiUrl/notification');
-    final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Token $deviceToken',
-      };
-    final response = await http.get(url, headers: headers);
-    logger.i("Response: ${response.body}");
-      if (response.statusCode == 200) {
-          final decodedResponse = json.decode(response.body);
-          return decodedResponse;
-      } else {
-          throw Exception('Failed to load notifications');
-        }
+  Future<Map<String, dynamic>> fetchNotifications(BuildContext context) async {
+  final url = Uri.parse('$apiUrl/notification');
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Token $deviceToken',
+  };
+
+  final response = await http.get(url, headers: headers);
+  logger.i("Response: ${response.statusCode} - ${response.body}");
+
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } 
+
+  if (response.statusCode == 403) {
+    try {
+      final decodedResponse = json.decode(response.body);
+      if (decodedResponse["detail"] == 'Invalid token or user not found.') {
+        logger.e("Invalid token. Redirecting to login.");
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+        throw Exception('Invalid token. Redirecting to login.');
       }
+    } catch (e) {
+      logger.e("Failed to parse error response: $e");
+    }
+  }
+
+  throw Exception('Failed to load notifications: ${response.body}');
+}
+
+
+      
 
   Future<Map<String, dynamic>> deleteNotification(String id) async {
     final url = Uri.parse('$apiUrl/notification/$id/');
@@ -67,4 +88,14 @@ class NotificationService {
       return {'success': false};
     }
   }
+  void _redirectToLogin(BuildContext context) {
+  if (!context.mounted) return; // Prevent navigation if the context is not active
+
+  Future.microtask(() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  });
+}
+
 }

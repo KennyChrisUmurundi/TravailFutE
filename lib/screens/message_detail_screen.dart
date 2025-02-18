@@ -115,7 +115,7 @@ class MessageDetailScreen extends StatelessWidget {
                       TextField(
                         style: TextStyle(fontSize: 14),
                         controller: _textController,
-                        maxLines: 2,
+                        maxLines: 5,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: 'Votre rappel',
