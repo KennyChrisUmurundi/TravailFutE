@@ -59,16 +59,20 @@ class Recording {
     //TODO: Send to Api, then reset the audiopath
     logger.i("INITIALIZING UPLOAD RECORD FUNTION");
     
-    given_speech = await openAI.transcribeAudio(audioPath);
-    String promptTemplate = await loadPrompt();
-    promptTemplate.replaceAll("{USER_VOICE_TEXT}", given_speech);
-    messages = [
-      {'role': 'developer', "content": promptTemplate},
-      {'role': 'user', 'content': given_speech},
-    ];
-    Map<String, dynamic> response_message = await openAI.generateChatCompletion(messages);
-    Map<String, dynamic> notificationData = response_message["notification_data"];
-    print("THE RESPONSE MESSAGE  $response_message");
+    try {
+      given_speech = await openAI.transcribeAudio(audioPath);
+    } catch (e) {
+      logger.e("Error transcribing audio: $e");
+    }
+    // String promptTemplate = await loadPrompt();
+    // promptTemplate.replaceAll("{USER_VOICE_TEXT}", given_speech);
+    // messages = [
+    //   {'role': 'developer', "content": promptTemplate},
+    //   {'role': 'user', 'content': given_speech},
+    // ];
+    // Map<String, dynamic> response_message = await openAI.generateChatCompletion(messages);
+    // Map<String, dynamic> notificationData = response_message["notification_data"];
+    // print("THE RESPONSE MESSAGE  $response_message");
     // final outputFilePath = await openAI.getWritableFilePath('speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
     // await openAI.textToSpeech(response_message["user_response"], outputFilePath);
     audioPath = "";

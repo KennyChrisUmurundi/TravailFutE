@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/services/notification_service.dart';
+import 'package:travail_fute/utils/noti.dart';
 import 'package:travail_fute/utils/provider.dart';
 import 'package:travail_fute/widgets/foab.dart';
+import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart' as dt_picker;
 
 class MessageDetailScreen extends StatelessWidget {
   final List<Map<String, String>> sentMessages;
   final List<Map<String, String>> receivedMessages;
+  final notification = Noti();
   final String sender;
 
   MessageDetailScreen({required this.sentMessages, required this.receivedMessages, required this.sender});
@@ -34,7 +37,7 @@ class MessageDetailScreen extends StatelessWidget {
     });
 
     final ScrollController _scrollController = ScrollController();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
@@ -86,8 +89,7 @@ class MessageDetailScreen extends StatelessWidget {
       ),
       floatingActionButton: RecordFAB(onPressed: (String result) {
         final TextEditingController _textController = TextEditingController(text: result);
-        DateTime selectedDate = DateTime.now();
-        TimeOfDay selectedTime = TimeOfDay.now();
+        DateTime selectedDateTime = DateTime.now().add(Duration(seconds: 10));
 
         showDialog(
           context: context,
@@ -105,7 +107,7 @@ class MessageDetailScreen extends StatelessWidget {
                       Text(
                         'Rappel',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -113,7 +115,7 @@ class MessageDetailScreen extends StatelessWidget {
                       TextField(
                         style: TextStyle(fontSize: 14),
                         controller: _textController,
-                        maxLines: 5,
+                        maxLines: 2,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: 'Votre rappel',
@@ -121,32 +123,135 @@ class MessageDetailScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 20),
                       ListTile(
-                        title: Text("Date: ${DateFormat('MM-dd').format(selectedDate)}"),
-                        trailing: Icon(Icons.calendar_today),
-                        onTap: () async {
-                          DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(2025),
-                            lastDate: DateTime(2026),
+                        title: ElevatedButton.icon(
+                          onPressed: () async {
+                          dt_picker.DatePicker.showDateTimePicker(
+                            context,
+                            showTitleActions: true,
+                            minTime: DateTime(2025, 1, 1),
+                            maxTime: DateTime(2026, 12, 31),
+                            onConfirm: (date) async {
+                              print('confirm $date');
+                              selectedDateTime = date;
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) {
+                                  return Center(child: CircularProgressIndicator());
+                                },
+                              );
+
+                              try {
+                                await notificationService.sendNotification(
+                                  '$sender',
+                                  _textController.text,
+                                  dueDate: DateFormat('yyyy-MM-dd').format(selectedDateTime),
+                                  dueTime: DateFormat('HH:mm').format(selectedDateTime),
+                                );
+
+                                // Schedule the notification
+                                try {
+                                  notification.scheduleNotification(
+                                  selectedDateTime,
+                                  sender,
+                                  _textController.text,
+                                  );
+                                  Navigator.of(context).pop(); // 
+                                  Navigator.of(context).pop();
+                                  showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                    title: Text('Succès'),
+                                    content: Text('Notification programmée avec succès'),
+                                    actions: [
+                                      TextButton(
+                                      child: Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) => NotificationScreen(),
+                                          ),
+                                        );
+                                      },
+                                      ),
+                                    ],
+                                    );
+                                    
+                                  },
+                                );
+                                } catch (e) {
+                                  print('Error scheduling notification: $e');
+                                }
+                                // Close the reminder dialog
+                                 // Close the loading dialog
+                                // Navigate to NotificationScreen
+                              } catch (e) {
+                                // Close the loading dialog
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            currentTime: selectedDateTime,
+                            locale: dt_picker.LocaleType.fr,
                           );
-                          if (picked != null && picked != selectedDate) {
-                            selectedDate = picked;
-                          }
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      ListTile(
-                        title: Text("Heure: ${selectedTime.format(context)}"),
-                        trailing: Icon(Icons.access_time),
+                          },
+                          icon: Icon(Icons.calendar_today),
+                          label: Text(
+                          " Date et Heure",
+                          style: TextStyle(fontSize: 12, color: kTravailFuteMainColor),
+                          ),
+                          
+                        ),
+                        // trailing: Icon(Icons.calendar_today),
                         onTap: () async {
-                          TimeOfDay? picked = await showTimePicker(
-                            context: context,
-                            initialTime: selectedTime,
+                          dt_picker.DatePicker.showDateTimePicker(
+                            context,
+                            showTitleActions: true,
+                            minTime: DateTime(2025, 1, 1),
+                            maxTime: DateTime(2026, 12, 31),
+                            onConfirm: (date) async{
+                              print("tje date is $date"); 
+                              selectedDateTime = date;
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) {
+                                  return Center(child: CircularProgressIndicator());
+                                },
+                              );
+
+                              try {
+                                await notificationService.sendNotification(
+                                  '$sender',
+                                  _textController.text,
+                                  dueDate: DateFormat('yyyy-MM-dd').format(selectedDateTime),
+                                  dueTime: DateFormat('HH:mm').format(selectedDateTime),
+                                );
+
+                                // Schedule the notification
+                                try {
+                                  notification.scheduleNotification(
+                                  selectedDateTime, 
+                                  sender, 
+                                  _textController.text,
+                                  );
+                                  Navigator.of(context).pop(); // Close the loading dialog
+                                  // Navigator.of(context).pushNamed('/NotificationScreen'); // Navigate to NotificationScreen
+                                } catch (e) {
+                                  print('Error scheduling notification: $e');
+                                }
+                                // Close the reminder dialog
+                                
+                              } catch (e) {
+                                // Close the loading dialog
+                                Navigator.of(context).pop();
+                                
+                              }
+                            },
+                            currentTime: selectedDateTime,
+                            locale: dt_picker.LocaleType.fr,
                           );
-                          if (picked != null && picked != selectedTime) {
-                            selectedTime = picked;
-                          }
                         },
                       ),
                       SizedBox(height: 20),
@@ -159,29 +264,7 @@ class MessageDetailScreen extends StatelessWidget {
                               Navigator.of(context).pop();
                             },
                           ),
-                          ElevatedButton(
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(kTravailFuteMainColor),
-                            ),
-                            child: Text('Ok'),
-                            onPressed: () {
-                              try {
-                                notificationService.sendNotification(
-                                  'client $sender',
-                                  _textController.text,
-                                  dueDate: DateFormat('MM-dd').format(selectedDate),
-                                  dueTime: selectedTime.format(context),
-                                );
-                                Navigator.of(context).pop();
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => NotificationScreen()),
-                                );
-                              } catch (e) {
-                                print('Error sending notification: $e');
-                              }
-                            },
-                          ),
+                    
                         ],
                       ),
                     ],
@@ -196,3 +279,4 @@ class MessageDetailScreen extends StatelessWidget {
     );
   }
 }
+

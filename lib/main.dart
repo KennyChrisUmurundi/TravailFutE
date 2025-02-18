@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
@@ -9,15 +10,27 @@ import 'package:travail_fute/screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
 import 'utils/provider.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:travail_fute/utils/noti.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async{
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+  flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+    AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
   final tokenProvider = TokenProvider();
   final userProvider = UserProvider();
+  tz.initializeTimeZones();
+  Noti().initNotification();
+  await initializeDateFormatting('fr_FR', null); // Initialize French locale
+  
 
   await tokenProvider.loadToken();
   await userProvider.loadUser();
+  
   runApp(
     MultiProvider(
       providers: [

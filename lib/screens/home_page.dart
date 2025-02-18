@@ -5,6 +5,7 @@ import 'package:smswatcher/smswatcher.dart';
 import 'package:travail_fute/constants.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:travail_fute/screens/notification_screen.dart';
 // import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
@@ -202,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 SizedBox(height: height * 0.01),
-                const Row(
+                Row(
                   children: [
                     Expanded(
                       child: MainCard(
@@ -213,11 +214,18 @@ class _HomePageState extends State<HomePage> {
                         completed: 5,
                       ),
                     ),
-                    SizedBox(width: 5),
-                    Expanded(
+                    const SizedBox(width: 5),
+                     Expanded(
                       child: MainCard(
                           label: 'Notifications',
-                          
+                          onPress: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NotificationScreen(),
+                            ),
+                          );
+                        },
                           cardColor: kTravailFuteMainColor,
                           addOption: false,
                           icon: Icons.notifications,

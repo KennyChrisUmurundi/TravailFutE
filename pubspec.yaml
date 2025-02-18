@@ -28,11 +28,13 @@ dependencies:
     flutter_spinkit: ^5.2.0
     http: ^1.1.0
     flutter_form_builder: ^9.1.1
+    flutter_local_notifications: ^18.0.1
 
     path: any
     smswatcher: ^0.0.3
     flutter_sms_manager:
         path: ../flutter_sms_manager
+    flutter_datetime_picker_plus: ^2.2.0
 dev_dependencies:
     flutter_test:
         sdk: flutter
