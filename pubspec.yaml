@@ -36,6 +36,7 @@ dependencies:
         path: ../flutter_sms_manager
     flutter_datetime_picker_plus: ^2.2.0
     url_launcher: ^6.3.1
+    flutter_launcher_icons: ^0.14.3
 dev_dependencies:
     flutter_test:
         sdk: flutter
@@ -76,4 +77,13 @@ flutter:
 
 flutter_native_splash:
     color: "#FFFFFF"
-    image: assets/images/splash.png
+    image: assets/images/logoo.png
+
+    android_12:
+        color: "#FFFFFF"
+        image: assets/images/loc.png
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/loc.png"

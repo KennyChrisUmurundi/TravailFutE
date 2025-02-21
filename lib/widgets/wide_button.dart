@@ -46,7 +46,7 @@ class _WideButtonState extends State<WideButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         width: MediaQuery.of(context).size.width * 0.3, // Responsive width
-        height: MediaQuery.of(context).size.height * 0.06, // Responsive height
+        height: MediaQuery.of(context).size.height * 0.04, // Responsive height
         decoration: BoxDecoration(
           color: widget.buttonColor,
           borderRadius: BorderRadius.circular(8),

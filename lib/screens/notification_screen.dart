@@ -1,13 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_detail.dart';
+import 'package:travail_fute/screens/clients.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/services/notification_service.dart';
 import 'package:travail_fute/utils/provider.dart';
+
+
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -25,6 +26,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void initState() {
     super.initState();
     fetchNotifications();
+    
   }
 
   void fetchNotifications() async {
@@ -38,9 +40,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: kWhiteColor)),
         backgroundColor: kTravailFuteMainColor,
       ),
       body: isLoading // Show loading indicator if loading
@@ -77,10 +80,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             setState(() {
                               isLoading = false; // Set loading state to false
                             });
-                            
                           });
                           Navigator.of(context).push(
-                              MaterialPageRoute(builder: (context) => ClientDetail(client: client)),
+                              MaterialPageRoute(builder: (context) => ClientDetail(client:client,phoneNumber: notifications[index]['title'],)),
                             );
                         },
                         child: ListTile(
@@ -101,10 +103,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                utf8.decode(notifications[index]['message'].runes.toList()),
+                                notifications[index]['message'],
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontFamily: 'Roboto',
+                                  fontFamily: 'Poppins',
                                   color: Colors.grey,
                                 ),
                               ),
@@ -118,7 +120,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Date: ${DateFormat('dd MMM', 'fr_FR').format(dueDate)}',
+                                'Date: ${DateFormat('dd MMM').format(dueDate)}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: kTravailFuteMainColor,

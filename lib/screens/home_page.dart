@@ -6,6 +6,7 @@ import 'package:travail_fute/constants.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
+import 'package:travail_fute/screens/profile_screen.dart';
 // import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/foab.dart';
@@ -118,14 +119,14 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Bonjour, ${widget.user['username']}!', // Display user's name
+                  'Bonjour, ${widget.user['username']}', // Display user's name
                   style: kWelcomePageTextStyle(context),
                 ),
                 SizedBox(height: height * 0.02),
                 Row(
                   children: [
                     WideButton(
-                      onPress: () => _fetchSms(),
+                      onPress: (){},
                       title: 'Overview',
                       buttonColor: kTravailFuteMainColor,
                       textColor: kWhiteColor,
@@ -133,7 +134,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     SizedBox(width: width * 0.03),
                     WideButton(
-                      onPress: () => _fetchSms(),
+                      onPress: () {},
                       title: 'Chantiers',
                       buttonColor: kWhiteColor,
                       textColor: kTravailFuteSecondaryColor,
@@ -144,11 +145,27 @@ class _HomePageState extends State<HomePage> {
                 SizedBox(height: height * 0.03),
                 Row(
                   children: [
-                    const Expanded(
+                    // const Expanded(
+                    //   child: MainCard(
+                    //     // onPress: playRecord,
+                    //     label: 'Chantiers',
+                    //     icon: Icons.construction,
+                    //     value: 1,
+                    //     completed: 5,
+                    //   ),
+                    // ),
+                    Expanded(
                       child: MainCard(
-                        // onPress: playRecord,
-                        label: 'Chantiers',
-                        icon: Icons.construction,
+                        label: 'Messages',
+                        onPress: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MessagesScreen(),
+                            ),
+                          );
+                        },
+                        icon: Icons.message,
                         value: 1,
                         completed: 5,
                       ),
@@ -170,48 +187,56 @@ class _HomePageState extends State<HomePage> {
                           value: 89,
                           completed: 89),
                     ),
+                    
                   ],
                 ),
                 SizedBox(height: height * 0.01),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: MainCard(
+                //         label: 'Messages',
+                //         onPress: () {
+                //           Navigator.push(
+                //             context,
+                //             MaterialPageRoute(
+                //               builder: (context) => MessagesScreen(),
+                //             ),
+                //           );
+                //         },
+                //         icon: Icons.euro,
+                //         value: 1,
+                //         completed: 5,
+                //       ),
+                //     ),
+                //     SizedBox(width: 5),
+                //     Expanded(
+                //       child: MainCard(
+                //           label: 'Tâches',
+                          
+                //           icon: Icons.task,
+                //           value: 89,
+                //           completed: 89),
+                //     ),
+                //   ],
+                // ),
+                // SizedBox(height: height * 0.01),
                 Row(
                   children: [
                     Expanded(
                       child: MainCard(
-                        label: 'Messages',
+                        label: 'Profil',
+                        icon: Icons.person_pin_circle_sharp,
+                        value: 1,
+                        completed: 5,
                         onPress: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => MessagesScreen(),
+                              builder: (context) => ProfileScreen(user: widget.user),
                             ),
                           );
                         },
-                        icon: Icons.euro,
-                        value: 1,
-                        completed: 5,
-                      ),
-                    ),
-                    SizedBox(width: 5),
-                    Expanded(
-                      child: MainCard(
-                          label: 'Tâches',
-                          
-                          icon: Icons.task,
-                          value: 89,
-                          completed: 89),
-                    ),
-                  ],
-                ),
-                SizedBox(height: height * 0.01),
-                Row(
-                  children: [
-                    Expanded(
-                      child: MainCard(
-                        label: 'Factures',
-                        
-                        icon: Icons.receipt,
-                        value: 1,
-                        completed: 5,
                       ),
                     ),
                     const SizedBox(width: 5),

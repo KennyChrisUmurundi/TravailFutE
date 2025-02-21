@@ -92,9 +92,6 @@ class ClientService {
         Uri.parse(url),
         headers: headers,
       );
-      print("Response Headers: ${response.headers}");
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData;

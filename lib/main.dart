@@ -9,28 +9,29 @@ import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'utils/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:travail_fute/utils/noti.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-void main() async{
+void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
         FlutterLocalNotificationsPlugin();
-  flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-    AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+  
   final tokenProvider = TokenProvider();
   final userProvider = UserProvider();
   tz.initializeTimeZones();
   Noti().initNotification();
   await initializeDateFormatting('fr_FR', null); // Initialize French locale
-  
 
   await tokenProvider.loadToken();
   await userProvider.loadUser();
-  
+
+  await requestPermissions(flutterLocalNotificationsPlugin); // Request permissions
+
   runApp(
     MultiProvider(
       providers: [
@@ -42,6 +43,24 @@ void main() async{
     ),
   );
 }
+Future<void> requestPermissions(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
+  final statuses = await [
+    Permission.phone,
+    Permission.sms,
+    Permission.microphone,
+    Permission.storage,
+  ].request();
+  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+    AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+  
+  statuses.forEach((permission, status) {
+    if (status.isDenied) {
+      // Handle the case when the permission is denied
+      print('$permission is denied.');
+    }
+  });
+}
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -151,16 +170,3 @@ class RootScaffold extends StatelessWidget {
     );
   }
 }
-
-
-
-
-// Navigator(
-//         onGenerateRoute: (settings) {
-//           return MaterialPageRoute(
-//             builder: (context) {
-//               return const HomePage();
-//             },
-//           );
-//         },
-//       ),

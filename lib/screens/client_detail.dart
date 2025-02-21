@@ -1,15 +1,37 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 import 'package:travail_fute/screens/edit_client.dart'; // Import the edit screen
 import 'package:url_launcher/url_launcher.dart'; // Import the url_launcher package
 
-class ClientDetail extends StatelessWidget {
-  const ClientDetail({super.key, required this.client});
+class ClientDetail extends StatefulWidget {
+  const ClientDetail({super.key, required this.client, this.phoneNumber});
+  final String? phoneNumber;
   final Map<String, dynamic> client;
-  
+
+  @override
+  State<ClientDetail> createState() => _ClientDetailState();
+}
+
+class _ClientDetailState extends State<ClientDetail> {
+
+  final ClientService clientService = ClientService();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.phoneNumber != null) {
+      clientService.getClientByPhone(context, widget.phoneNumber!).then((client) {
+        setState(() {
+          widget.client.addAll(client);
+        });
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
@@ -32,7 +54,7 @@ class ClientDetail extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EditClient(client: client),
+                  builder: (context) => EditClient(client: widget.client),
                 ),
               );
             },
@@ -56,7 +78,7 @@ class ClientDetail extends StatelessWidget {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
-  
+
   Widget _buildHeaderSection(BuildContext context, double width) {
     return Card(
       elevation: 3,
@@ -85,7 +107,7 @@ class ClientDetail extends StatelessWidget {
             // ),
             // SizedBox(height: width * 0.02),
             Text(
-              client['phone_number']?.toString().replaceFirst('+32', '0').replaceAllMapped(RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})'), (Match m) => '${m[1]} ${m[2]} ${m[3]} ${m[4]}') ?? '',
+              widget.client['phone_number']?.toString().replaceFirst('+32', '0').replaceAllMapped(RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})'), (Match m) => '${m[1]} ${m[2]} ${m[3]} ${m[4]}') ?? '',
               style: TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.w500,
@@ -95,7 +117,7 @@ class ClientDetail extends StatelessWidget {
             ),
             SizedBox(height: width * 0.04),
             Text(
-                "${client['address_street'] ?? 'Pas d\'adresse enregistrée'}, ${client['address_town'] ?? ''} ${client['postal_code'] ?? ''}",
+                "${widget.client['address_street'] ?? 'Pas d\'adresse enregistrée'}, ${widget.client['address_town'] ?? ''} ${widget.client['postal_code'] ?? ''}",
               style: TextStyle(
                 fontFamily: "Poppins",
                 fontWeight: FontWeight.bold,
@@ -106,41 +128,33 @@ class ClientDetail extends StatelessWidget {
             SizedBox(height: width * 0.02),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+                children: [
                 _buildIconButton(Icons.phone, Colors.green, () {
-                  final phoneNumber = client['phone_number']?.toString();
+                  final phoneNumber = widget.client['phone_number']?.toString();
                   if (phoneNumber != null && phoneNumber.isNotEmpty) {
-                    final Uri launchUri = Uri(
-                      scheme: 'tel',
-                      path: phoneNumber,
-                    );
-                    _launchURL(launchUri);
+                  final Uri launchUri = Uri(
+                    scheme: 'tel',
+                    path: phoneNumber,
+                  );
+                  _launchURL(launchUri);
                   }
                 }),
                 _buildIconButton(Icons.sms, Colors.blue, () {
-                  final phoneNumber = client['phone_number']?.toString();
+                  final phoneNumber = widget.client['phone_number']?.toString();
                   if (phoneNumber != null && phoneNumber.isNotEmpty) {
-                    final Uri smsUri = Uri(
-                      scheme: 'sms',
-                      path: phoneNumber,
-                    );
-                    _launchURL(smsUri);
+                  final Uri smsUri = Uri(
+                    scheme: 'sms',
+                    path: phoneNumber,
+                  );
+                  _launchURL(smsUri);
                   }
                 }),
                 _buildIconButton(Icons.location_on, Colors.indigo, () {
-                    final address = "${client['address_street'] ?? ''}, ${client['address_town'] ?? ''} ${client['postal_code'] ?? ''}";
-                  // if (address != null && address.isNotEmpty) {
-                  //   final Uri mapsUri = Uri(
-                  //     scheme: 'https',
-                  //     host: 'www.google.com',
-                  //     path: '/maps/search/',
-                  //     queryParameters: {'q': address},
-                  //   );
-                  //   _launchURL(mapsUri);
-                  // }
+                  final address = "${widget.client['address_street'] ?? ''}, ${widget.client['address_town'] ?? ''} ${widget.client['postal_code'] ?? ''}";
                   final Uri mapsUri = Uri.parse("geo:0,0?q=$address");
                   _launchURL(mapsUri);
                 }),
+                // _buildIconButton(Icons.airline_seat_flat_angled_outlined, const Color.fromARGB(255, 192, 63, 12), () {}),
               ],
             ),
           ],
@@ -148,7 +162,7 @@ class ClientDetail extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildIconButton(IconData icon, Color background, VoidCallback onPressed) {
     return CircleAvatar(
       backgroundColor: background,
@@ -160,7 +174,7 @@ class ClientDetail extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildStatsSection(BuildContext context, double width) {
     return Column(
       children: [
@@ -170,7 +184,7 @@ class ClientDetail extends StatelessWidget {
               child: MainCard(
                 onPress: () {},
                 label: 'Devis',
-                number: '5',
+                // number: '5',
                 icon: Icons.euro,
                 value: 1,
                 completed: 5,
@@ -182,7 +196,7 @@ class ClientDetail extends StatelessWidget {
               child: MainCard(
                 onPress: () {},
                 label: 'Factures',
-                number: '15',
+                // number: '15',
                 icon: Icons.receipt,
                 value: 89,
                 cardColor: kWhiteColor,
@@ -197,8 +211,8 @@ class ClientDetail extends StatelessWidget {
             Expanded(
               child: MainCard(
                 onPress: () {},
-                label: 'Tâches',
-                number: '0',
+                label: 'Interventions',
+                // number: '0',
                 icon: Icons.task,
                 value: 89,
                 cardColor: kWhiteColor,
@@ -210,7 +224,7 @@ class ClientDetail extends StatelessWidget {
               child: MainCard(
                 onPress: () {},
                 label: 'Gestion',
-                number: '5',
+                // number: '5',
                 icon: Icons.folder,
                 value: 1,
                 completed: 5,

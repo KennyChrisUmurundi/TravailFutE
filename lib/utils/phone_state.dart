@@ -3,7 +3,10 @@ import 'package:phone_state/phone_state.dart';
 
 // This Function is for the user to accept the phone state permission
 Future<bool> requestPermission() async {
-  var status = await Permission.phone.request();
+  var status = await Permission.phone.status;
+  if (status.isDenied || status.isRestricted || status.isLimited || status.isPermanentlyDenied) {
+    status = await Permission.phone.request();
+  }
 
   switch (status) {
     case PermissionStatus.denied:

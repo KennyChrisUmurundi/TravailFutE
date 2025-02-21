@@ -13,7 +13,7 @@ const kProgressBarInactiveColor = Color(0xFFF2e2cd);
 TextStyle kWelcomePageTextStyle(BuildContext context) {
   return TextStyle(
     fontFamily: 'Poppins',
-    fontSize: getResponsiveFontSize(context, 30),
+    fontSize: getResponsiveFontSize(context, 25),
     fontWeight: FontWeight.w500,
     color: kTravailFuteSecondaryColor,
   );

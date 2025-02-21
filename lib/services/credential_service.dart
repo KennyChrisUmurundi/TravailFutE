@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:travail_fute/providers/user_provider.dart';
+import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/utils/provider.dart';
 
 const String apiUrlLogin = "https://tfte.azurewebsites.net/api/credentials/login/";
@@ -46,5 +47,16 @@ class CredentialService {
     } else {
       throw Exception('Failed to load OpenAI key');
     }
+  }
+  Future<void> logout(BuildContext context) async {
+    globalDeviceToken = '';
+    await Provider.of<TokenProvider>(context, listen: false).clearToken();
+    await Provider.of<UserProvider>(context, listen: false).clearUser();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginScreen(),
+      ),
+    );
   }
 }
