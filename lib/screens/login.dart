@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'dart:ui';
 import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/services/credential_service.dart'; // Update with your actual project name
 import 'dart:convert';
 import 'home_page.dart';
-import 'package:flutter/services.dart'; // Added import for FilteringTextInputFormatter
+// Added import for FilteringTextInputFormatter
 // import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {

@@ -3,367 +3,349 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smswatcher/smswatcher.dart';
 import 'package:travail_fute/constants.dart';
-// import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:travail_fute/screens/assistant.dart';
+import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
-// import 'package:travail_fute/screens/client_create.dart';
+import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
-import 'package:travail_fute/widgets/foab.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:audioplayers/audioplayers.dart';
-
-import '../widgets/main_card.dart';
-import '../widgets/wide_button.dart';
-// import 'package:record/record.dart';
-import 'package:logger/logger.dart';
-import 'clients.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
-import 'messages_screen.dart';
 import 'package:flutter_sms_manager/flutter_sms_manager.dart';
+import 'clients.dart';
+import 'messages_screen.dart';
 
 class HomePage extends StatefulWidget {
-  final Map<String, dynamic> user; // Add user parameter
-  final String deviceToken; // Add device token parameter
-  
+  final Map<String, dynamic> user;
+  final String deviceToken;
 
-  HomePage({super.key, required this.user, required this.deviceToken}); // Update constructor
+  const HomePage({super.key, required this.user, required this.deviceToken});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-    
 void waitPermission() async {
   await Permission.sms.request();
   await Permission.phone.request();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  
   PhoneState status = PhoneState.nothing();
   late PhoneStateService phoneStateService;
   final _smsListenerPlugin = Smswatcher();
-  Future<List<Map<String, String>>?>? sms;
   List<Map<String, dynamic>> _smsList = [];
   bool _isLoading = false;
-  String _errorMessage = '';
-
-  
 
   @override
   void initState() {
-    waitPermission();
-    sms = _smsListenerPlugin.getAllSMS();
-    _smsListenerPlugin.getStreamOfSMS();
-    Logger.level = Level.debug;
-    phoneStateService = PhoneStateService(context); // Initialize phoneStateService
     super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..forward();
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    
+    waitPermission();
+    phoneStateService = PhoneStateService(context);
     phoneStateService.startListening();
     _fetchSms();
   }
 
   Future<void> _fetchSms() async {
-    print("Fetching SMS");
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-
+    setState(() => _isLoading = true);
     try {
-
-      print("Fetching SMS2");
       final smsList = await SmsManager.fetchSms();
-      print("lissssssssssssssssssssssssst $smsList");
-      setState(() {
-        _smsList = smsList;
-      });
+      setState(() => _smsList = smsList);
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        print(_errorMessage);
-      });
+      print('Error fetching SMS: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
-    var size = MediaQuery.of(context).size;
-    var width = size.width;
-    var height = size.height;
-    phoneStateService = PhoneStateService(context);
-
+    final size = MediaQuery.of(context).size;
+    
     return Scaffold(
-      backgroundColor: kBackgroundColor,
-      appBar: AppBar(
-        title: SizedBox(
-          height: height * 0.05,
-          child: Image.asset('assets/images/splash.png'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [kTravailFuteMainColor.withOpacity(0.1), Colors.white],
+          ),
         ),
-        shadowColor: Colors.white,
-        elevation: 0.3,
-        backgroundColor: Colors.white,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(size),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(size.width * 0.04),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeSection(size),
+                      SizedBox(height: size.height * 0.03),
+                      _buildActionButtons(size),
+                      SizedBox(height: size.height * 0.03),
+                      _buildMainCards(size),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      bottomNavigationBar: BottomNavBar(
+        onMenuPressed: () {},
+        backgroundColor: Colors.white.withOpacity(0.95),
+      ),
+      floatingActionButton: _buildFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildHeader(Size size) {
+    return Container(
+      padding: EdgeInsets.all(size.width * 0.04),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FadeTransition(
+            opacity: _animation,
+            child: Image.asset(
+              'assets/images/splash.png',
+              height: size.height * 0.05,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeSection(Size size) {
+    return FadeTransition(
+      opacity: _animation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bonjour, ${widget.user['username']}',
+            style: TextStyle(
+              fontSize: size.width * 0.07,
+              fontWeight: FontWeight.bold,
+              color: kTravailFuteMainColor,
+              shadows: [
+                Shadow(
+                  color: Colors.black12,
+                  offset: Offset(2, 2),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'Ready to manage your day?',
+            style: TextStyle(
+              fontSize: size.width * 0.04,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(Size size) {
+    return Row(
+      children: [
+        _buildActionButton(
+          size,
+          'Overview',
+          kTravailFuteMainColor,
+          () => Navigator.push(context, MaterialPageRoute(builder: (_) => Assistant())),
+        ),
+        SizedBox(width: size.width * 0.03),
+        _buildActionButton(
+          size,
+          'Chantiers',
+          Colors.white,
+          () {},
+          textColor: kTravailFuteSecondaryColor,
+          borderColor: kTravailFuteSecondaryColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(Size size, String title, Color color, VoidCallback onPress, 
+      {Color? textColor, Color? borderColor}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onPress,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: size.height * 0.015),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(15),
+            border: borderColor != null ? Border.all(color: borderColor) : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: textColor ?? Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: size.width * 0.04,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainCards(Size size) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => MessagesScreen()))),
+            SizedBox(width: size.width * 0.03),
+            _buildCard(size, 'Clients', Icons.people, 89, 89, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => ClientsList(deviceToken: widget.deviceToken))),
+              addOption: true,
+              onAddPress: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => ClientCreatePage(deviceToken: widget.deviceToken))),
+            ),
+          ],
+        ),
+        SizedBox(height: size.height * 0.02),
+        Row(
+          children: [
+            _buildCard(size, 'Assistant', Icons.euro, 1, 5, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => Assistant()))),
+            SizedBox(width: size.width * 0.03),
+            _buildCard(size, 'Factures', Icons.task, 89, 89, () =>Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+)),
+          ],
+        ),
+        SizedBox(height: size.height * 0.02),
+        Row(
+          children: [
+            _buildCard(size, 'Profil', Icons.person_pin_circle_sharp, 1, 5, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => ProfileScreen(user: widget.user)))),
+            SizedBox(width: size.width * 0.03),
+            _buildCard(size, 'Notifications', Icons.notifications, 89, 89, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => NotificationScreen())),
+              cardColor: kTravailFuteMainColor,
+              textColor: Colors.white),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(Size size, String label, IconData icon, int value, int completed, 
+      VoidCallback onPress, {bool addOption = false, VoidCallback? onAddPress, Color? cardColor, Color? textColor}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onPress,
+        child: ScaleTransition(
+          scale: _animation,
           child: Container(
-            padding: EdgeInsets.fromLTRB(width * 0.04, 0, width * 0.04, width * 0.04),
-            margin: EdgeInsets.symmetric(horizontal: width * 0.04),
+            padding: EdgeInsets.all(size.width * 0.03),
+            decoration: BoxDecoration(
+              color: cardColor ?? Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(icon, color: textColor ?? kTravailFuteMainColor, size: size.width * 0.07),
+                    if (addOption)
+                      GestureDetector(
+                        onTap: onAddPress,
+                        child: Icon(Icons.add_circle_outline, color: kTravailFuteSecondaryColor),
+                      ),
+                  ],
+                ),
+                SizedBox(height: size.height * 0.01),
                 Text(
-                  'Bonjour, ${widget.user['username']}', // Display user's name
-                  style: kWelcomePageTextStyle(context),
+                  label,
+                  style: TextStyle(
+                    color: textColor ?? Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: size.width * 0.04,
+                  ),
                 ),
-                SizedBox(height: height * 0.02),
-                Row(
-                  children: [
-                    WideButton(
-                      onPress: (){},
-                      title: 'Overview',
-                      buttonColor: kTravailFuteMainColor,
-                      textColor: kWhiteColor,
-                      borderColor: kTravailFuteMainColor,
-                    ),
-                    SizedBox(width: width * 0.03),
-                    WideButton(
-                      onPress: () {},
-                      title: 'Chantiers',
-                      buttonColor: kWhiteColor,
-                      textColor: kTravailFuteSecondaryColor,
-                      borderColor: kTravailFuteSecondaryColor,
-                    ),
-                  ],
+                Text(
+                  '$value/$completed',
+                  style: TextStyle(
+                    color: textColor?.withOpacity(0.7) ?? Colors.grey[600],
+                    fontSize: size.width * 0.035,
+                  ),
                 ),
-                SizedBox(height: height * 0.03),
-                Row(
-                  children: [
-                    // const Expanded(
-                    //   child: MainCard(
-                    //     // onPress: playRecord,
-                    //     label: 'Chantiers',
-                    //     icon: Icons.construction,
-                    //     value: 1,
-                    //     completed: 5,
-                    //   ),
-                    // ),
-                    Expanded(
-                      child: MainCard(
-                        label: 'Messages',
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MessagesScreen(),
-                            ),
-                          );
-                        },
-                        icon: Icons.message,
-                        value: 1,
-                        completed: 5,
-                      ),
-                    ),
-                    SizedBox(width: width * 0.015),
-                    Expanded(
-                      child: MainCard(
-                          onPress: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ClientsList(deviceToken: widget.deviceToken), // Pass device token
-                              ),
-                            );
-                          },
-                          label: 'Clients',
-                          
-                          icon: Icons.people,
-                          value: 89,
-                          completed: 89),
-                    ),
-                    
-                  ],
-                ),
-                SizedBox(height: height * 0.01),
-                // Row(
-                //   children: [
-                //     Expanded(
-                //       child: MainCard(
-                //         label: 'Messages',
-                //         onPress: () {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //               builder: (context) => MessagesScreen(),
-                //             ),
-                //           );
-                //         },
-                //         icon: Icons.euro,
-                //         value: 1,
-                //         completed: 5,
-                //       ),
-                //     ),
-                //     SizedBox(width: 5),
-                //     Expanded(
-                //       child: MainCard(
-                //           label: 'Tâches',
-                          
-                //           icon: Icons.task,
-                //           value: 89,
-                //           completed: 89),
-                //     ),
-                //   ],
-                // ),
-                // SizedBox(height: height * 0.01),
-                Row(
-                  children: [
-                    Expanded(
-                      child: MainCard(
-                        label: 'Profil',
-                        icon: Icons.person_pin_circle_sharp,
-                        value: 1,
-                        completed: 5,
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProfileScreen(user: widget.user),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                     Expanded(
-                      child: MainCard(
-                          label: 'Notifications',
-                          onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NotificationScreen(),
-                            ),
-                          );
-                        },
-                          cardColor: kTravailFuteMainColor,
-                          addOption: false,
-                          icon: Icons.notifications,
-                          value: 89,
-                          textColor: kWhiteColor,
-                          completed: 89),
-                    ),
-                  ],
-                ),
-                
-                // SizedBox(
-                //   height: 10,
-                // ),
-                // Expanded(
-                //   child: Container(
-                //     margin: EdgeInsets.all(8),
-                //     decoration: BoxDecoration(
-                //         color: kTravailFuteMainColor,
-                //         borderRadius: BorderRadius.circular(15)),
-                //   ),
-                // ),
-                // const Text(
-                //   "Important",
-                //   style: kTitlePageTextStyle,
-                // ),
-                // Container(
-                //   // height: 50,
-                //   // // width: 200,
-                //   decoration: BoxDecoration(
-                //       border: Border.all(
-                //         width: 1,
-                //         color: kCardColor,
-                //       ),
-                //       borderRadius: BorderRadius.circular(10)),
-                //   child: Column(
-                //     children: [
-                //       Row(
-                //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //         children: [
-                //           WideButton(
-                //             onPress: stopRecord,
-                //             title: 'Details',
-                //             buttonColor: kTravailFuteMainColor,
-                //             textColor: kWhiteColor,
-                //             borderColor: kTravailFuteMainColor,
-                //           ),
-                //           const Row(
-                //             children: [
-                //               Text(
-                //                 '3 Appels',
-                //                 style: kCardBigTextStyle,
-                //               ),
-                //               SizedBox(
-                //                 width: 3,
-                //               ),
-                //               Icon(
-                //                 Icons.call,
-                //                 size: 12,
-                //               ),
-                //             ],
-                //           )
-                //         ],
-                //       )
-                //     ],
-                //   ),
-                // )
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
-      // floatingActionButton: MyCenteredFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
-}
 
-class CustomRoundButton extends StatelessWidget {
-  const CustomRoundButton({
-    super.key,
-    required this.buttonIcon,
-    required this.backgroundColor,
-    required this.iconColor,
-    // this.onPress,
-  });
-  final IconData buttonIcon;
-  final Color backgroundColor;
-  final Color iconColor;
-  // final void Function()? onPress;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 33,
-      width: 33,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: backgroundColor,
-        border: Border.all(
-          color: iconColor,
-          width: 1.0,
-        ),
-      ),
-      child: Center(
-        child: IconButton(
-          onPressed: () {},
-          icon: Icon(
-            buttonIcon,
-            color: iconColor,
-            size: 18,
-          ),
-        ),
-      ),
+  Widget _buildFAB() {
+    return FloatingActionButton(
+      onPressed: () {},
+      backgroundColor: kTravailFuteMainColor,
+      child: Icon(Icons.add, size: 30),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
     );
   }
 }

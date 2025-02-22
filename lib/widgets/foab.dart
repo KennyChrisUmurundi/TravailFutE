@@ -6,7 +6,7 @@ import 'package:travail_fute/utils/record.dart';
 class RecordFAB extends StatefulWidget {
   final void Function(String) onPressed;
 
-  const RecordFAB({required this.onPressed, Key? key}) : super(key: key);
+  const RecordFAB({required this.onPressed, super.key});
 
   @override
   State<RecordFAB> createState() => _RecordFABState();

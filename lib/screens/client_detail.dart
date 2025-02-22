@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/services/clients_service.dart';
@@ -74,7 +73,7 @@ class _ClientDetailState extends State<ClientDetail> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(onMenuPressed: () {}),
+      // bottomNavigationBar: BottomNavBar(onMenuPressed: () {}),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

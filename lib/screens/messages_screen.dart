@@ -6,6 +6,8 @@ import 'package:travail_fute/widgets/message_card.dart'; // Add this line to imp
 import 'package:travail_fute/screens/message_detail_screen.dart'; // Import MessageDetailScreen
 
 class MessagesScreen extends StatelessWidget {
+  const MessagesScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

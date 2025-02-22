@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/services/clients_service.dart'; // Import ClientService
-import 'package:travail_fute/widgets/botom_nav.dart';
-
-import 'package:travail_fute/widgets/loading.dart'; // Import Loading widget
+import 'package:travail_fute/services/clients_service.dart';
+import 'package:travail_fute/widgets/loading.dart';
 
 class ClientCreatePage extends StatefulWidget {
   final String deviceToken;
@@ -15,219 +13,296 @@ class ClientCreatePage extends StatefulWidget {
   State<ClientCreatePage> createState() => _ClientCreatePageState();
 }
 
-class _ClientCreatePageState extends State<ClientCreatePage> {
+class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerProviderStateMixin {
   final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
-  final ClientService clientService = ClientService(); // Create an instance of ClientService
-  bool isLoading = false; // Add loading state
-  bool _isNameValid = false;
-  bool _isSurnameValid = false;
-  bool _isAddressValid = false;
-  bool _isPhoneValid = false;
+  final ClientService clientService = ClientService();
+  bool isLoading = false;
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
-  bool get _isFormValid => _isNameValid && _isSurnameValid && _isAddressValid && _isPhoneValid;
+  // Validation states
+  final Map<String, bool> _validationStates = {
+    'Telephone': false,
+    'Rue': false,
+    'Ville': false,
+    'Code Postal': false,
+    'Nom': false,
+    'Prenom': false,
+    'Email': false,
+  };
+
+  bool get _isFormValid => _validationStates.values.every((isValid) => isValid);
 
   @override
   void initState() {
     super.initState();
-    _formKey.currentState?.fields['Nom']?.didChange(_validateName);
-    _formKey.currentState?.fields['Prenom']?.didChange(_validateSurname);
-    _formKey.currentState?.fields['Addresse']?.didChange(_validateAddress);
-    _formKey.currentState?.fields['Telephone']?.didChange(_validatePhone);
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..forward();
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
   @override
   void dispose() {
-    // No need to remove onChanged listeners as they are not explicitly added
+    _controller.dispose();
     super.dispose();
   }
 
-  void _validateName() {
+  void _validateField(String fieldName, String? value) {
     setState(() {
-      _isNameValid = _formKey.currentState?.fields['Nom']?.value.isNotEmpty ?? false;
+      switch (fieldName) {
+        case 'Telephone':
+          _validationStates[fieldName] = (value?.length == 10);
+          break;
+        case 'Rue':
+        case 'Ville':
+        case 'Nom':
+        case 'Prenom':
+          _validationStates[fieldName] = (value?.isNotEmpty ?? false);
+          break;
+        case 'Code Postal':
+          _validationStates[fieldName] = (value?.length == 4);
+          break;
+        case 'Email':
+          _validationStates[fieldName] = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value ?? '');
+          break;
+      }
     });
   }
 
-  void _validateSurname() {
-    setState(() {
-      _isSurnameValid = _formKey.currentState?.fields['Prenom']?.value.isNotEmpty ?? false;
-    });
-  }
-
-  void _validateAddress() {
-    setState(() {
-      _isAddressValid = _formKey.currentState?.fields['Addresse']?.value.isNotEmpty ?? false;
-    });
-  }
-
-  void _validatePhone() {
-    setState(() {
-      _isPhoneValid = _formKey.currentState?.fields['Telephone']?.value.length == 10;
-    });
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.saveAndValidate()) {
+      setState(() => isLoading = true);
+      try {
+        await clientService.createClient(context, _formKey.currentState!.value);
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating client: $e')),
+        );
+      } finally {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // LOCAL VARIABLES
-    var size = MediaQuery.of(context).size;
-    var width = size.width;
-    var height = size.height;
+    final size = MediaQuery.of(context).size;
 
-    return Stack(
-      children: [
-        Scaffold(
-          resizeToAvoidBottomInset: true,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            // title: SearchEngine(),
-            title: const Text('Enregistrer un client', style: TextStyle(color: kTravailFuteSecondaryColor, fontSize: 15, fontWeight: FontWeight.bold,fontFamily: 'Poppins'),),
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [kTravailFuteMainColor.withOpacity(0.1), Colors.white],
           ),
-          backgroundColor: kBackgroundColor,
-          body: Padding(
-            padding: EdgeInsets.all(width * 0.025),
-            child: FormBuilder(
-              key: _formKey,
-              autovalidateMode: AutovalidateMode.disabled,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: width * 0.020,
-                    ),
-                    FormTextField(
-                      textLabel: 'Nom',
-                      icon: Icons.person,
-                      isValid: _isNameValid,
-                      onChanged: (value) => _validateName(),
-                    ),
-                    SizedBox(
-                      height: width * 0.015,
-                    ),
-                    FormTextField(
-                      textLabel: 'Prenom',
-                      icon: Icons.person,
-                      isValid: _isSurnameValid,
-                      onChanged: (value) => _validateSurname(),
-                    ),
-                    SizedBox(
-                      height: width * 0.015,
-                    ),
-                    FormTextField(
-                      textLabel: 'Addresse',
-                      icon: Icons.location_on,
-                      isValid: _isAddressValid,
-                      onChanged: (value) => _validateAddress(),
-                    ),
-                    SizedBox(
-                      height: width * 0.015,
-                    ),
-                    FormTextField(
-                      textLabel: 'Telephone',
-                      icon: Icons.phone,
-                      isValid: _isPhoneValid,
-                      onChanged: (value) => _validatePhone(),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly, // Only accept digits
-                        LengthLimitingTextInputFormatter(10), // Limit to 10 digits
-                      ],
-                    ),
-                    SizedBox(
-                      height: width * 0.05,
-                    ),
-                    ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            WidgetStateProperty.all<Color>(kTravailFuteMainColor),
-                        minimumSize:
-                            WidgetStateProperty.all<Size>(const Size(150, 50)),
-                      ),
-                      onPressed: _isFormValid ? () async {
-                        if (_formKey.currentState!.saveAndValidate()) {
-                          setState(() {
-                            isLoading = true; // Set loading to true
-                          });
-                          await clientService.createClient(context, _formKey.currentState!.value);
-                          setState(() {
-                            isLoading = false; // Set loading to false
-                          });
-                          Navigator.pop(context); // Navigate back to the previous screen
-                        }
-                      } : null, // Disable button if form is not valid
-                      child: const Text(
-                        'Enregistrer',
-                        style: TextStyle(fontWeight: FontWeight.bold,fontFamily: 'Poppins',fontSize: 15,),
-                      ),
-                    ),
-                  ],
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(size),
+                  Expanded(
+                    child: _buildForm(size),
+                  ),
+                ],
+              ),
+              if (isLoading) _buildLoadingOverlay(),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: _buildFAB(),
+    );
+  }
+
+  Widget _buildHeader(Size size) {
+    return Container(
+      padding: EdgeInsets.all(size.width * 0.04),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: kTravailFuteMainColor),
+            onPressed: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: FadeTransition(
+              opacity: _animation,
+              child: Text(
+                'Create New Client',
+                style: TextStyle(
+                  fontSize: size.width * 0.05,
+                  fontWeight: FontWeight.bold,
+                  color: kTravailFuteMainColor,
                 ),
               ),
             ),
           ),
-          bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
-          // floatingActionButton: const MyCenteredFAB(),
-          // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm(Size size) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(size.width * 0.05),
+      child: FadeTransition(
+        opacity: _animation,
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: EdgeInsets.all(size.width * 0.05),
+            child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ModernTextField(
+                    name: 'Nom',
+                    label: 'Last Name',
+                    icon: Icons.person,
+                    onChanged: (value) => _validateField('Nom', value),
+                  ),
+                  ModernTextField(
+                    name: 'Prenom',
+                    label: 'First Name',
+                    icon: Icons.person,
+                    onChanged: (value) => _validateField('Prenom', value),
+                  ),
+                  ModernTextField(
+                    name: 'Telephone',
+                    label: 'Phone',
+                    icon: Icons.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    onChanged: (value) => _validateField('Telephone', value),
+                  ),
+                  ModernTextField(
+                    name: 'Email',
+                    label: 'Email',
+                    icon: Icons.email,
+                    onChanged: (value) => _validateField('Email', value),
+                  ),
+                  ModernTextField(
+                    name: 'Rue',
+                    label: 'Street',
+                    icon: Icons.location_on,
+                    onChanged: (value) => _validateField('Rue', value),
+                  ),
+                  ModernTextField(
+                    name: 'Ville',
+                    label: 'City',
+                    icon: Icons.location_city,
+                    onChanged: (value) => _validateField('Ville', value),
+                  ),
+                  ModernTextField(
+                    name: 'Code Postal',
+                    label: 'Postal Code',
+                    icon: Icons.local_post_office,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    onChanged: (value) => _validateField('Code Postal', value),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        if (isLoading) const Loading(), // Add loading widget
-      ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.3),
+      child: const Center(child: Loading()),
+    );
+  }
+
+  Widget _buildFAB() {
+    return FloatingActionButton(
+      onPressed: _isFormValid ? _submitForm : null,
+      backgroundColor: _isFormValid ? kTravailFuteMainColor : Colors.grey,
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: ScaleTransition(
+        scale: _animation,
+        child: const Icon(Icons.check, color: Colors.white, size: 30),
+      ),
     );
   }
 }
 
-class FormTextField extends StatelessWidget {
-  const FormTextField({
-    super.key,
-    required this.textLabel,
-    required this.icon,
-    required this.isValid,
-    required this.onChanged,
-    this.inputFormatters,
-  });
-
-  final String textLabel;
+class ModernTextField extends StatelessWidget {
+  final String name;
+  final String label;
   final IconData icon;
-  final bool isValid;
   final ValueChanged<String?>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
 
+  const ModernTextField({
+    super.key,
+    required this.name,
+    required this.label,
+    required this.icon,
+    this.onChanged,
+    this.inputFormatters,
+  });
+
   @override
   Widget build(BuildContext context) {
-      // LOCAL VARIABLES
-      var size = MediaQuery.of(context).size;
-      var width = size.width;
+    final size = MediaQuery.of(context).size;
 
-    return Container(
-      padding:  EdgeInsets.all(width * 0.020),
+    return Padding(
+      padding: EdgeInsets.only(bottom: size.height * 0.02),
       child: FormBuilderTextField(
-        name: textLabel,
-        decoration: InputDecoration(
-          labelText: textLabel,
-          labelStyle: const TextStyle(color: Colors.grey),
-          icon: Icon(icon),
-          iconColor: kTravailFuteMainColor,
-          focusColor: kTravailFuteMainColor,
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: kTravailFuteMainColor),
-          ),
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: kTravailFuteMainColor),
-          ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey),
-          ),
-          errorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.red),
-          ),
-          focusedErrorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.red),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(vertical: width * 0.025, horizontal: width * 0.030),
-          suffixIcon: isValid ? const Icon(Icons.check, color: Colors.green) : null, // Add tick icon if valid
-        ),
-        style: const TextStyle(color: Colors.black),
+        name: name,
         onChanged: onChanged,
         inputFormatters: inputFormatters,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey[600]),
+          prefixIcon: Icon(icon, color: kTravailFuteMainColor),
+          filled: true,
+          fillColor: Colors.grey[100],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+        ),
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
       ),
     );
   }

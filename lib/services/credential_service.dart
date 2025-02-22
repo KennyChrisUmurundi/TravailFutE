@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -12,25 +13,38 @@ String globalDeviceToken = '';
 
 class CredentialService {
   Future<http.Response> login(BuildContext context, String phone, String pin) async {
-    final response = await http.post(
-      Uri.parse(apiUrlLogin),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'phone_number': phone,
-        'pin': pin,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrlLogin),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'phone_number': phone,
+          'pin': pin,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final responseBody = jsonDecode(response.body);
-      globalDeviceToken = responseBody["device_token"];
-      Provider.of<TokenProvider>(context, listen: false).saveToken(globalDeviceToken);
-      Provider.of<UserProvider>(context, listen: false).saveUser(responseBody["user"]);
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        globalDeviceToken = responseBody["device_token"];
+        Provider.of<TokenProvider>(context, listen: false).saveToken(globalDeviceToken);
+        Provider.of<UserProvider>(context, listen: false).saveUser(responseBody["user"]);
+      } else {
+        throw Exception('Failed to login: ${response.statusCode}');
+      }
+
+      return response;
+    } on SocketException catch (e) {
+      print('Network error: $e');
+      throw Exception('Network error: $e');
+    } on http.ClientException catch (e) {
+      print('Client error: $e');
+      throw Exception('Client error: $e');
+    } catch (e) {
+      print('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
     }
-
-    return response;
   }
 
   Future<String> getOpenAiKey() async {
@@ -48,6 +62,7 @@ class CredentialService {
       throw Exception('Failed to load OpenAI key');
     }
   }
+
   Future<void> logout(BuildContext context) async {
     globalDeviceToken = '';
     await Provider.of<TokenProvider>(context, listen: false).clearToken();

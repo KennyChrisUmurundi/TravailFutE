@@ -15,7 +15,7 @@ class MessageDetailScreen extends StatelessWidget {
   final notification = Noti();
   final String sender;
 
-  MessageDetailScreen({required this.sentMessages, required this.receivedMessages, required this.sender});
+  MessageDetailScreen({super.key, required this.sentMessages, required this.receivedMessages, required this.sender});
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +36,10 @@ class MessageDetailScreen extends StatelessWidget {
       return dateA.compareTo(dateB);
     });
 
-    final ScrollController _scrollController = ScrollController();
+    final ScrollController scrollController = ScrollController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
     });
 
     return Scaffold(
@@ -55,7 +55,7 @@ class MessageDetailScreen extends StatelessWidget {
         children: [
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
+              controller: scrollController,
               reverse: false, // This will make the latest message appear at the bottom
               itemCount: allMessages.length,
               itemBuilder: (context, index) {
@@ -88,7 +88,7 @@ class MessageDetailScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: RecordFAB(onPressed: (String result) {
-        final TextEditingController _textController = TextEditingController(text: result);
+        final TextEditingController textController = TextEditingController(text: result);
         DateTime selectedDateTime = DateTime.now().add(Duration(seconds: 10));
 
         showDialog(
@@ -114,7 +114,7 @@ class MessageDetailScreen extends StatelessWidget {
                       SizedBox(height: 20),
                       TextField(
                         style: TextStyle(fontSize: 14),
-                        controller: _textController,
+                        controller: textController,
                         maxLines: 5,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
@@ -143,8 +143,8 @@ class MessageDetailScreen extends StatelessWidget {
 
                               try {
                                 await notificationService.sendNotification(
-                                  '$sender',
-                                  _textController.text,
+                                  sender,
+                                  textController.text,
                                   dueDate: DateFormat('yyyy-MM-dd').format(selectedDateTime),
                                   dueTime: DateFormat('HH:mm').format(selectedDateTime),
                                 );
@@ -154,7 +154,7 @@ class MessageDetailScreen extends StatelessWidget {
                                   notification.scheduleNotification(
                                   selectedDateTime,
                                   sender,
-                                  _textController.text,
+                                  textController.text,
                                   );
                                   Navigator.of(context).pop(); // 
                                   Navigator.of(context).pop();
@@ -223,8 +223,8 @@ class MessageDetailScreen extends StatelessWidget {
 
                               try {
                                 await notificationService.sendNotification(
-                                  '$sender',
-                                  _textController.text,
+                                  sender,
+                                  textController.text,
                                   dueDate: DateFormat('yyyy-MM-dd').format(selectedDateTime),
                                   dueTime: DateFormat('HH:mm').format(selectedDateTime),
                                 );
@@ -234,7 +234,7 @@ class MessageDetailScreen extends StatelessWidget {
                                   notification.scheduleNotification(
                                   selectedDateTime, 
                                   sender, 
-                                  _textController.text,
+                                  textController.text,
                                   );
                                   Navigator.of(context).pop(); // Close the loading dialog
                                   // Navigator.of(context).pushNamed('/NotificationScreen'); // Navigate to NotificationScreen

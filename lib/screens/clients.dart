@@ -7,7 +7,6 @@ import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
-import 'package:travail_fute/widgets/foab.dart';
 import 'package:travail_fute/widgets/loading.dart';
 import 'package:travail_fute/widgets/search_bar.dart';
 
@@ -156,40 +155,49 @@ class _ClientsListState extends State<ClientsList> {
         ],
       ),
       backgroundColor: kBackgroundColor,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                    controller: _scrollController,
-                    padding: EdgeInsets.all(width * 0.025),
-                    itemCount: filteredClientList.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return ClientCard(client: filteredClientList[index]);
-                    }),
-              ),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //   children: [
-              //     if (previousUrl != null)
-              //       TextButton(
-              //         onPressed: () => callClient(url: previousUrl),
-              //         child: Text('Previous'),
-              //       ),
-              //     if (nextUrl != null)
-              //       TextButton(
-              //         onPressed: () => callClient(url: nextUrl),
-              //         child: Text('Next'),
-              //       ),
-              //   ],
-              // ),
-            ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [kTravailFuteMainColor.withOpacity(0.1), Colors.white],
           ),
-          if (isLoading) const Loading(), // Add loading widget
-        ],
+        ),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                      controller: _scrollController,
+                      padding: EdgeInsets.all(width * 0.025),
+                      itemCount: filteredClientList.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ClientCard(client: filteredClientList[index]);
+                      }),
+                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //   children: [
+                //     if (previousUrl != null)
+                //       TextButton(
+                //         onPressed: () => callClient(url: previousUrl),
+                //         child: Text('Previous'),
+                //       ),
+                //     if (nextUrl != null)
+                //       TextButton(
+                //         onPressed: () => callClient(url: nextUrl),
+                //         child: Text('Next'),
+                //       ),
+                //   ],
+                // ),
+              ],
+            ),
+            if (isLoading) const Loading(), // Add loading widget
+          ],
+        ),
       ),
-      bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
+      // bottomNavigationBar: BottomNavBar(onMenuPressed: () {  },),
       // floatingActionButton: const RecordFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
-// import 'package:travail_fute/screens/home_page.dart';
+import 'package:travail_fute/screens/home_page.dart';
+import 'package:travail_fute/screens/home_page.dart';
 
 class MainCard extends StatelessWidget {
   const MainCard({
@@ -11,7 +12,7 @@ class MainCard extends StatelessWidget {
     required this.value,
     required this.completed,
     this.onPress,
-    this.addOption = true,
+    this.addOption = false,
     this.cardColor = kWhiteColor,
     this.textColor = kTravailFuteSecondaryColor,
     this.onAddPress,
@@ -53,17 +54,17 @@ class MainCard extends StatelessWidget {
                   icon,
                   color: textColor,
                 ),
-                // addOption
-                //     ? GestureDetector(
-                //         behavior: HitTestBehavior.opaque,
-                //         onTap: onAddPress,
-                //         child: CustomRoundButton(
-                //           buttonIcon: Icons.add,
-                //           backgroundColor: kTravailFuteMainColor,
-                //           iconColor: kWhiteColor,
-                //         ),
-                //       )
-                //     : Container(),
+                addOption
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onAddPress,
+                        child: IconButton(
+                          icon: Icon(Icons.add, color: kWhiteColor),
+                          onPressed: onAddPress,
+                          color: kTravailFuteMainColor,
+                        ),
+                      )
+                    : Container(),
               ],
             ),
             const SizedBox(

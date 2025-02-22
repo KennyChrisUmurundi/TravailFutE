@@ -51,7 +51,10 @@ class ClientService {
     final bodyData = jsonEncode({
       "first_name": data["Nom"],
       "last_name": data["Prenom"],
-      "address": data["Addresse"],
+      "email": data["email"],
+      "address_street": data["Rue"],
+      "address_town": data["Ville"],
+      "postal_code": data["Code Postal"],
       "phone_number": data["Telephone"],
     });
 

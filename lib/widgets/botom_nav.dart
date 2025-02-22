@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/screens/home_page.dart';
 import 'package:travail_fute/screens/login.dart';
@@ -8,7 +9,7 @@ import 'package:travail_fute/utils/provider.dart';
 class BottomNavBar extends StatelessWidget {
   final VoidCallback onMenuPressed;
 
-  const BottomNavBar({required this.onMenuPressed, super.key});
+  const BottomNavBar({required this.onMenuPressed, super.key, required Color backgroundColor});
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +100,7 @@ class _BottomNavBarStatefulState extends State<BottomNavBarStateful> with Single
             } else {
               _controller.reverse();
             }
-          },
+          }, backgroundColor: kTravailFuteMainColor,
         ),
         Positioned(
           top: 0,
