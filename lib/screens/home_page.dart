@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       padding: EdgeInsets.all(size.width * 0.04),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
+          colors: [kTravailFuteMainColor, const Color.fromARGB(255, 197, 175, 175)],
         ),
         boxShadow: [
           BoxShadow(
@@ -343,9 +343,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return FloatingActionButton(
       onPressed: () {},
       backgroundColor: kTravailFuteMainColor,
-      child: Icon(Icons.add, size: 30),
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Icon(Icons.add, size: 30),
     );
   }
 }

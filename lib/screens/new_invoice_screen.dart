@@ -17,7 +17,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
   final List<Map<String, dynamic>> _services = [];
   List<String> _clients = [];
   String? _selectedClient;
-  double _tvaRate = 0.20; // Default 20% TVA
+  final double _tvaRate = 0.20; // Default 20% TVA
   bool _isLoadingClients = true;
 
   double get _subTotal => _services.fold(0.0, (sum, service) => sum + (service['price'] as double));

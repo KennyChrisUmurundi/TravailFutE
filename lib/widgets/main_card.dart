@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/screens/home_page.dart';
-import 'package:travail_fute/screens/home_page.dart';
 
 class MainCard extends StatelessWidget {
   const MainCard({
@@ -15,7 +13,7 @@ class MainCard extends StatelessWidget {
     this.addOption = false,
     this.cardColor = kWhiteColor,
     this.textColor = kTravailFuteSecondaryColor,
-    this.onAddPress,
+    this.onAddPress, required int elevation,
   });
 
   final String label;

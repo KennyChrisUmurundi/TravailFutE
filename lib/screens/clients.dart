@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_create.dart';
-import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/widgets/loading.dart';
