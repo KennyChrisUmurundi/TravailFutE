@@ -70,36 +70,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static const platform = MethodChannel('sms_channel');
-  final logger = Logger();
-
-  Future<void> fetchSms() async {
-    final messageProvider = Provider.of<MessageProvider>(context, listen: false);
-
-    try {
-      final List<dynamic> result = await platform.invokeMethod('getSms');
-
-      // Convert to List<Map<String, dynamic>> safely
-      final List<Map<String, dynamic>> messages = result.map((item) {
-        return Map<String, dynamic>.from(item);
-      }).toList();
-
-      // Convert all values to strings
-      final List<Map<String, String>> stringMessages = messages.map((message) {
-        return message.map((key, value) => MapEntry(key, value.toString()));
-      }).toList();
-
-      messageProvider.setMessages(stringMessages);
-    } on PlatformException catch (e) {
-      messageProvider.setMessages([]);
-      logger.e("Failed to get SMS: '${e.message}'.");
-    }
-  }
-
+  
   @override
   void initState() {
     super.initState();
-    fetchSms();
+    // fetchSms();
   }
 
   @override
@@ -148,23 +123,12 @@ class RootScaffold extends StatelessWidget {
       body: Consumer2<TokenProvider, UserProvider>(
         builder: (context, tokenProvider, userProvider, child) {
           if (tokenProvider.token.isEmpty || userProvider.user == null) {
-            // ✅ Show a loading screen instead of flashing login page
             return const LoginScreen();
           }
-
-          // ✅ Navigate to HomePage once token and user data are ready
-          Future.microtask(() {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => HomePage(
-                  deviceToken: tokenProvider.token,
-                  user: userProvider.user!,
-                ),
-              ),
-            );
-          });
-
-          return const LoginScreen(); // Prevents UI flicker
+          return HomePage(
+            deviceToken: tokenProvider.token,
+            user: userProvider.user!,
+          );
         },
       ),
     );

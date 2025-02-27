@@ -79,6 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => HomePage(user: user, deviceToken: deviceToken)), // Inject user and device token into HomePage
       );
     } else {
+      print(response);
       final responseData = jsonDecode(response.body);
       final errorMessage = responseData['non_field_errors'] != null
           ? responseData['non_field_errors'].join(', ')

@@ -2,128 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 
 class MainCard extends StatelessWidget {
-  const MainCard({
-    super.key,
-    required this.label,
-    this.number='',
-    required this.icon,
-    required this.value,
-    required this.completed,
-    this.onPress,
-    this.addOption = false,
-    this.cardColor = kWhiteColor,
-    this.textColor = kTravailFuteSecondaryColor,
-    this.onAddPress, required int elevation,
-  });
-
   final String label;
-  final String number;
   final IconData icon;
   final int value;
   final int completed;
-  final void Function()? onPress;
+  final VoidCallback onPress;
   final bool addOption;
-  final Color cardColor;
-  final Color textColor;
-  final void Function()? onAddPress;
+  final VoidCallback? onAddPress;
+  final Color? cardColor;
+  final Color? textColor;
+
+  const MainCard(Size size, {
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.completed,
+    required this.onPress,
+    this.addOption = false,
+    this.onAddPress,
+    this.cardColor,
+    this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    var height = MediaQuery.of(context).size.height; // Get screen height
+    var size = MediaQuery.of(context).size;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onPress,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        height: height * 0.16, // Set height based on screen height
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: cardColor,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(
-                  icon,
-                  color: textColor,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onPress,
+        child: ScaleTransition(
+          scale: AlwaysStoppedAnimation(1.0),
+          child: Container(
+            padding: EdgeInsets.all(size.width * 0.07),
+            decoration: BoxDecoration(
+              color: cardColor ?? Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
                 ),
-                addOption
-                    ? GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onAddPress,
-                        child: IconButton(
-                          icon: Icon(Icons.add, color: kWhiteColor),
-                          onPressed: onAddPress,
-                          color: kTravailFuteMainColor,
-                        ),
-                      )
-                    : Container(),
               ],
             ),
-            const SizedBox(
-              height: 10,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(icon, color: textColor ?? kTravailFuteMainColor, size: size.width * 0.07),
+                    if (addOption)
+                      GestureDetector(
+                        onTap: onAddPress,
+                        child: Icon(Icons.add_circle_outline, color: kTravailFuteSecondaryColor),
+                      ),
+                  ],
+                ),
+                SizedBox(height: size.height * 0.01),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor ?? Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: size.width * 0.04,
+                  ),
+                ),
+                // Uncomment if needed
+                // Text(
+                //   '$value/$completed',
+                //   style: TextStyle(
+                //     color: textColor?.withOpacity(0.7) ?? Colors.grey[600],
+                //     fontSize: size.width * 0.035,
+                //   ),
+                // ),
+              ],
             ),
-            Text(
-              number,
-              style: kCardSmallTextStyle(context),
-            ),
-            Text(
-              label,
-              style: kCardBigTextStyle(context),
-            ),
-            // const SizedBox(
-            //   height: 5,
-            // ),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     SizedBox(
-            //       width: 80,
-            //       child: LinearProgressIndicator(
-            //         borderRadius: BorderRadius.circular(10),
-            //         value: value / completed,
-            //         backgroundColor: kProgressBarInactiveColor,
-            //         color: kTravailFuteMainColor,
-            //       ),
-            //     ),
-            //     Container(
-            //       decoration: BoxDecoration(
-            //           color: kTravailFuteMainColor,
-            //           borderRadius: BorderRadius.circular(10)),
-            //       child: const Padding(
-            //         padding: EdgeInsets.all(4.0),
-            //         child: Text(
-            //           '5/7',
-            //           style: TextStyle(
-            //             color: kWhiteColor,
-            //             fontFamily: 'Poppins',
-            //             fontWeight: FontWeight.bold,
-            //             fontSize: 12,
-            //           ),
-            //         ),
-            //       ),
-            //     )
-            //   ],
-            // ),
-            // const SizedBox(
-            //   width: 5,
-            // ),
-            // const SizedBox(
-            //   height: 5,
-            // ),
-            // // const Center(
-            // //   child: CustomRoundButton(
-            // //     buttonIcon: Icons.record_voice_over,
-            // //     backgroundColor: kCardColor,
-            // //     iconColor: kTravailFuteMainColor,
-            // //   ),
-            // // )
-          ],
+          ),
         ),
       ),
     );

@@ -1,13 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/providers/message_provider.dart';
 import 'package:travail_fute/widgets/message_card.dart'; // Add this line to import MessageCard widget
 import 'package:travail_fute/screens/message_detail_screen.dart'; // Import MessageDetailScreen
+import 'package:logger/logger.dart';
 
-class MessagesScreen extends StatelessWidget {
+class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  final logger = Logger();
+  static const platform = MethodChannel('sms_channel');
+
+  Future<void> fetchSms() async {
+    final messageProvider = Provider.of<MessageProvider>(context, listen: false);
+
+    try {
+      final List<dynamic> result = await platform.invokeMethod('getSms');
+
+      // Convert to List<Map<String, dynamic>> safely
+      final List<Map<String, dynamic>> messages = result.map((item) {
+        return Map<String, dynamic>.from(item);
+      }).toList();
+
+      // Convert all values to strings
+      final List<Map<String, String>> stringMessages = messages.map((message) {
+        return message.map((key, value) => MapEntry(key, value.toString()));
+      }).toList();
+
+      messageProvider.setMessages(stringMessages);
+    } on PlatformException catch (e) {
+      messageProvider.setMessages([]);
+      logger.e("Failed to get SMS: '${e.message}'.");
+    }
+  }
+  @override
+  void initState() {
+    fetchSms();
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

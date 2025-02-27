@@ -6,8 +6,10 @@ import 'package:travail_fute/constants.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:travail_fute/screens/assistant.dart';
 import 'package:travail_fute/screens/client_create.dart';
+import 'package:travail_fute/screens/message_provider_screen.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
+import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
@@ -89,10 +91,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(size),
+              // _buildHeader(size),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(size.width * 0.04),
+                  padding: EdgeInsets.all(size.width * 0.05),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -109,10 +111,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        onMenuPressed: () {},
-        backgroundColor: Colors.white.withOpacity(0.95),
-      ),
+      // bottomNavigationBar: BottomNavBar(
+      //   onMenuPressed: () {},
+      //   backgroundColor: Colors.white.withOpacity(0.95),
+      // ),
       floatingActionButton: _buildFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -170,7 +172,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
           ),
           Text(
-            'Ready to manage your day?',
+            'Prêt à gérer votre journée?',
             style: TextStyle(
               fontSize: size.width * 0.04,
               color: Colors.grey[600],
@@ -186,7 +188,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       children: [
         _buildActionButton(
           size,
-          'Overview',
+          'Assistant',
           kTravailFuteMainColor,
           () => Navigator.push(context, MaterialPageRoute(builder: (_) => Assistant())),
         ),
@@ -242,27 +244,39 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       children: [
         Row(
           children: [
-            _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => MessagesScreen()))),
-            SizedBox(width: size.width * 0.03),
             _buildCard(size, 'Clients', Icons.people, 89, 89, () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => ClientsList(deviceToken: widget.deviceToken))),
               addOption: true,
               onAddPress: () => Navigator.push(
                 context, MaterialPageRoute(builder: (_) => ClientCreatePage(deviceToken: widget.deviceToken))),
             ),
+            SizedBox(width: size.width * 0.03),
+            _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const MessageProviderScreen()))),
           ],
         ),
         SizedBox(height: size.height * 0.02),
         Row(
           children: [
-            _buildCard(size, 'Assistant', Icons.euro, 1, 5, () => Navigator.push(
+            _buildCard(size, 'Chantiers', Icons.build, 1, 5, () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const ProjectScreen()))),
+            SizedBox(width: size.width * 0.03),
+            _buildCard(size, 'Factures', Icons.receipt, 89, 89, () =>Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+            )),
+          ],
+        ),
+        SizedBox(height: size.height * 0.02),
+        Row(
+          children: [
+            _buildCard(size, 'Devis', Icons.euro, 1, 5, () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => Assistant()))),
             SizedBox(width: size.width * 0.03),
-            _buildCard(size, 'Factures', Icons.task, 89, 89, () =>Navigator.push(
-  context,
-  MaterialPageRoute(builder: (context) => const ReceiptScreen()),
-)),
+            _buildCard(size, 'Factures', Icons.receipt, 89, 89, () =>Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+            )),
           ],
         ),
         SizedBox(height: size.height * 0.02),
@@ -289,7 +303,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: ScaleTransition(
           scale: _animation,
           child: Container(
-            padding: EdgeInsets.all(size.width * 0.03),
+            padding: EdgeInsets.all(size.width * 0.07),
             decoration: BoxDecoration(
               color: cardColor ?? Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -324,13 +338,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     fontSize: size.width * 0.04,
                   ),
                 ),
-                Text(
-                  '$value/$completed',
-                  style: TextStyle(
-                    color: textColor?.withOpacity(0.7) ?? Colors.grey[600],
-                    fontSize: size.width * 0.035,
-                  ),
-                ),
+                // Text(
+                //   '$value/$completed',
+                //   style: TextStyle(
+                //     color: textColor?.withOpacity(0.7) ?? Colors.grey[600],
+                //     fontSize: size.width * 0.035,
+                //   ),
+                // ),
               ],
             ),
           ),

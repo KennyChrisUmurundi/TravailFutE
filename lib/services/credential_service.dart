@@ -31,19 +31,19 @@ class CredentialService {
         Provider.of<TokenProvider>(context, listen: false).saveToken(globalDeviceToken);
         Provider.of<UserProvider>(context, listen: false).saveUser(responseBody["user"]);
       } else {
-        throw Exception('Failed to login: ${response.statusCode}');
+        return response;
       }
 
       return response;
     } on SocketException catch (e) {
       print('Network error: $e');
-      throw Exception('Network error: $e');
+      return http.Response('Network error: $e', 500);
     } on http.ClientException catch (e) {
       print('Client error: $e');
-      throw Exception('Client error: $e');
+      return http.Response('Client error: $e', 400);
     } catch (e) {
       print('Unexpected error: $e');
-      throw Exception('Unexpected error: $e');
+      return http.Response('Unexpected error: $e', 500);
     }
   }
 

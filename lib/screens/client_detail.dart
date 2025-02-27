@@ -222,26 +222,26 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
           Row(
             children: [
               Expanded(
-                child: MainCard(
+                child: MainCard(size,
                   onPress: () {},
                   label: 'Devis',
                   icon: Icons.euro,
                   value: 1,
                   completed: 5,
                   cardColor: kWhiteColor,
-                  elevation: 8,
+                  
                 ),
               ),
               SizedBox(width: width * 0.03),
               Expanded(
-                child: MainCard(
+                child: MainCard(size,
                   onPress: () {},
                   label: 'Factures',
                   icon: Icons.receipt,
                   value: 89,
                   completed: 89,
                   cardColor: kWhiteColor,
-                  elevation: 8,
+                  
                 ),
               ),
             ],
@@ -250,19 +250,19 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
           Row(
             children: [
               Expanded(
-                child: MainCard(
+                child: MainCard(size,
                   onPress: () {},
                   label: 'Interventions',
                   icon: Icons.task,
                   value: 89,
                   completed: 89,
                   cardColor: kWhiteColor,
-                  elevation: 8,
+                  
                 ),
               ),
               SizedBox(width: width * 0.03),
               Expanded(
-                child: MainCard(
+                child: MainCard(size,
                   onPress: () {},
                   label: 'Gestion',
                   icon: Icons.folder,
@@ -271,7 +271,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                   cardColor: kTravailFuteMainColor,
                   textColor: kWhiteColor,
                   addOption: false,
-                  elevation: 8,
+                  
                 ),
               ),
             ],
