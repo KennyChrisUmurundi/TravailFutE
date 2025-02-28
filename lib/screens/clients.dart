@@ -4,7 +4,6 @@ import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
-import 'package:travail_fute/widgets/loading.dart';
 
 class ClientsList extends StatefulWidget {
   final String deviceToken;
@@ -261,11 +260,10 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
                 });
               },
               items: [
-                DropdownMenuItem(value: 'last_name', child: Text('Name', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'postal_code', child: Text('Postal Code', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'address_town', child: Text('Town', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'phone_number', child: Text('Phone', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'address_street', child: Text('Street', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
+                DropdownMenuItem(value: 'last_name', child: Text('Nom', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
+                DropdownMenuItem(value: 'postal_code', child: Text('Code Postal', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
+                DropdownMenuItem(value: 'phone_number', child: Text('Telephone', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
+                
               ],
             ),
           ),
@@ -274,7 +272,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
               controller: _searchController,
               onSubmitted: (_) => _filterClients(),
               decoration: InputDecoration(
-                hintText: 'Search by ${_selectedFilter.replaceAll('_', ' ')}...',
+                hintText: 'Recherche ...',
                 hintStyle: TextStyle(color: Colors.grey[400]),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: width * 0.04, horizontal: width * 0.03),
@@ -291,7 +289,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
         ? _buildEmptyState(size, width)
         : ListView.builder(
             controller: _scrollController,
-            padding: EdgeInsets.all(width * 0.04),
+            padding: EdgeInsets.all(width * 0.03),
             itemCount: filteredClientList.length + (nextUrl != null ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == filteredClientList.length && nextUrl != null) {
@@ -306,10 +304,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
               }
               return FadeTransition(
                 opacity: _animation,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: size.height * 0.015),
-                  child: ClientCard(client: filteredClientList[index]),
-                ),
+                child: ClientCard(client: filteredClientList[index]),
               );
             },
           );
@@ -329,7 +324,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
             ),
             SizedBox(height: size.height * 0.02),
             Text(
-              'No Clients Found',
+                'Aucun client trouvé',
               style: TextStyle(
                 fontSize: width * 0.05,
                 color: Colors.grey[600],
@@ -338,7 +333,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
             ),
             SizedBox(height: size.height * 0.01),
             Text(
-              'Add a new client or refine your search',
+                'Ajoutez un nouveau client ou affinez votre recherche',
               style: TextStyle(
                 fontSize: width * 0.04,
                 color: Colors.grey[500],

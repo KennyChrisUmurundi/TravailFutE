@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smswatcher/smswatcher.dart';
@@ -11,11 +10,9 @@ import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
-import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
 import 'package:flutter_sms_manager/flutter_sms_manager.dart';
 import 'clients.dart';
-import 'messages_screen.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic> user;

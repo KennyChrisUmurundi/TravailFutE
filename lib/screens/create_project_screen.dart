@@ -1,15 +1,13 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart' as dt_picker;
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:travail_fute/services/project_service.dart';
 
 class CreateProjectScreen extends StatefulWidget {
-  const CreateProjectScreen({super.key});
+  final dynamic user;
+
+  const CreateProjectScreen({super.key, required this.user});
 
   @override
   State<CreateProjectScreen> createState() => _CreateProjectScreenState();
@@ -17,30 +15,32 @@ class CreateProjectScreen extends StatefulWidget {
 
 class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _clientController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
   bool isLoading = false;
-  final projectService = ProjectService();
+  final ProjectService projectService = ProjectService();
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     )..forward();
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _nameController.dispose();
-    _clientController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -66,9 +66,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
   }
 
   Future<void> _submitProject() async {
-    if (_nameController.text.isEmpty || _clientController.text.isEmpty || _startDate == null || _endDate == null) {
+    if (_nameController.text.isEmpty || _startDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields')),
+        const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
       );
       return;
     }
@@ -76,21 +76,21 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
     setState(() => isLoading = true);
     final projectData = {
       'name': _nameController.text,
-      'client': _clientController.text,
+      'client': widget.user['id'],
       'description': _descriptionController.text,
       'start_date': _startDate?.toIso8601String(),
-      'end_date': _endDate?.toIso8601String(),
+      'end_date': _endDate?.toIso8601String(), // Optional field
     };
 
     try {
       await projectService.createProject(context, projectData);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project created successfully')),
+        const SnackBar(content: Text('Chantier créé avec succès')),
       );
-      Navigator.pop(context, true); // Return true to trigger refresh in ProjectScreen
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating project: $e')),
+        SnackBar(content: Text('Erreur lors de la création du chantier: $e')),
       );
     } finally {
       setState(() => isLoading = false);
@@ -103,86 +103,79 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
     final width = size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        title: SizedBox(
-          height: 30,
-          child: Image.asset('assets/images/splash.png'),
+      body: Container(
+        decoration: BoxDecoration(
+          // gradient: LinearGradient(
+          //   begin: Alignment.topCenter,
+          //   end: Alignment.bottomCenter,
+          //   colors: [kTravailFuteMainColor.withOpacity(0.05), kWhiteColor],
+          // ),
         ),
-        shadowColor: Colors.white,
-        elevation: 0.3,
-        backgroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _buildForm(size, width),
-            ),
-            if (isLoading) _buildLoadingOverlay(width),
-          ],
+        child: SafeArea(
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(width),
+                    SizedBox(height: width * 0.04),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                      child: _buildForm(width),
+                    ),
+                    SizedBox(height: width * 0.1), // Space for FAB
+                  ],
+                ),
+              ),
+              if (isLoading) _buildLoadingOverlay(width),
+            ],
+          ),
         ),
       ),
       floatingActionButton: _buildFAB(width),
     );
   }
 
-  Widget _buildHeader(Size size, double width) {
+  Widget _buildHeader(double width) {
     return Container(
-      padding: EdgeInsets.all(width * 0.05),
+      padding: EdgeInsets.all(width * 0.04),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
-        ),
+        color: kWhiteColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 14,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: EdgeInsets.all(width * 0.025),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: kWhiteColor.withOpacity(0.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: kWhiteColor.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(Icons.arrow_back, color: kWhiteColor, size: width * 0.06),
-            ),
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: kTravailFuteMainColor, size: width * 0.06),
+            onPressed: () => Navigator.pop(context),
           ),
-          SizedBox(width: width * 0.04),
           Expanded(
             child: FadeTransition(
-              opacity: _animation,
-              child: Text(
-                'Create New Project',
-                style: TextStyle(
-                  fontSize: width * 0.05,
-                  fontWeight: FontWeight.bold,
-                  color: kWhiteColor,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
+              opacity: _fadeAnimation,
+              child: Row(
+                children: [
+                  SizedBox(
+                    height: 30,
+                    child: Image.asset('assets/images/splash.png'),
+                  ),
+                  SizedBox(width: width * 0.03),
+                  Text(
+                    'Nouveau Chantier',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: width * 0.05,
+                      fontWeight: FontWeight.w700,
+                      color: kTravailFuteMainColor,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -191,33 +184,29 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
     );
   }
 
-  Widget _buildForm(Size size, double width) {
-    return Padding(
-      padding: EdgeInsets.all(width * 0.05),
-      child: Card(
-        elevation: 10,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: Colors.white,
-        child: Padding(
-          padding: EdgeInsets.all(width * 0.05),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle(width, 'Project Details'),
-              SizedBox(height: width * 0.03),
-              _buildTextField(width, _nameController, 'Project Name', Icons.work),
-              SizedBox(height: width * 0.04),
-              _buildTextField(width, _clientController, 'Client', Icons.person),
-              SizedBox(height: width * 0.04),
-              _buildTextField(width, _descriptionController, 'Description', Icons.description, maxLines: 3),
-              SizedBox(height: width * 0.04),
-              _buildSectionTitle(width, 'Timeline'),
-              SizedBox(height: width * 0.03),
-              _buildDateField(width, 'Start Date', _startDate, () => _pickDate(true)),
-              // SizedBox(height: width * 0.04),
-              // _buildDateField(width, 'End Date', _endDate, () => _pickDate(false)),
-            ],
-          ),
+  Widget _buildForm(double width) {
+    final phoneNumber = widget.user['phone_number']?.toString().replaceFirst('+32', '0') ?? 'N/A';
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: kWhiteColor,
+      child: Padding(
+        padding: EdgeInsets.all(width * 0.05),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle(width, 'Chantier pour $phoneNumber'),
+            SizedBox(height: width * 0.04),
+            _buildTextField(width, _nameController, 'Nom du chantier', Icons.work),
+            SizedBox(height: width * 0.04),
+            _buildTextField(width, _descriptionController, 'Description', Icons.description, maxLines: 3),
+            SizedBox(height: width * 0.06),
+            _buildSectionTitle(width, 'Chronologie'),
+            SizedBox(height: width * 0.03),
+            _buildDateField(width, 'Date de début', _startDate, () => _pickDate(true)),
+            SizedBox(height: width * 0.04),
+            _buildDateField(width, 'Date de fin (optionnel)', _endDate, () => _pickDate(false)),
+          ],
         ),
       ),
     );
@@ -225,20 +214,14 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
 
   Widget _buildSectionTitle(double width, String title) {
     return FadeTransition(
-      opacity: _animation,
+      opacity: _fadeAnimation,
       child: Text(
         title,
         style: TextStyle(
+          fontFamily: 'Poppins',
           fontSize: width * 0.045,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           color: kTravailFuteMainColor,
-          shadows: [
-            Shadow(
-              color: Colors.black12,
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
-          ],
         ),
       ),
     );
@@ -246,16 +229,16 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
 
   Widget _buildTextField(double width, TextEditingController controller, String label, IconData icon, {int maxLines = 1}) {
     return FadeTransition(
-      opacity: _animation,
+      opacity: _fadeAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(15),
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 6,
-              offset: const Offset(0, 3),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -264,7 +247,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
           maxLines: maxLines,
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(color: Colors.grey[600]),
+            labelStyle: TextStyle(color: Colors.grey[600], fontFamily: 'Poppins'),
             prefixIcon: Icon(icon, color: kTravailFuteMainColor),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: width * 0.04, horizontal: width * 0.04),
@@ -276,19 +259,19 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
 
   Widget _buildDateField(double width, String label, DateTime? date, VoidCallback onTap) {
     return FadeTransition(
-      opacity: _animation,
+      opacity: _fadeAnimation,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: EdgeInsets.all(width * 0.04),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(15),
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black12,
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 6,
-                offset: const Offset(0, 3),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -297,11 +280,12 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
               Icon(Icons.calendar_today, color: kTravailFuteMainColor, size: width * 0.05),
               SizedBox(width: width * 0.03),
               Text(
-                date != null ? DateFormat('yyyy MMM dd  ').format(date) : label,
+                date != null ? DateFormat('d MMM yyyy', 'fr_FR').format(date) : label,
                 style: TextStyle(
+                  fontFamily: 'Poppins',
                   fontSize: width * 0.04,
                   color: date != null ? Colors.black87 : Colors.grey[600],
-                  fontWeight: date != null ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: date != null ? FontWeight.w500 : FontWeight.w400,
                 ),
               ),
             ],
@@ -313,16 +297,16 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
 
   Widget _buildLoadingOverlay(double width) {
     return Container(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withOpacity(0.5),
       child: Center(
         child: Container(
           padding: EdgeInsets.all(width * 0.05),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: kWhiteColor,
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: Colors.black.withOpacity(0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -350,7 +334,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: kTravailFuteMainColor.withOpacity(0.4),
+              color: kTravailFuteMainColor.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -358,7 +342,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
         ),
         padding: EdgeInsets.all(width * 0.04),
         child: ScaleTransition(
-          scale: _animation,
+          scale: _scaleAnimation,
           child: Icon(Icons.check, size: width * 0.07, color: kWhiteColor),
         ),
       ),

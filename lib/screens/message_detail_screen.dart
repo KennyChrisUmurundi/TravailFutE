@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/services/notification_service.dart';
 import 'package:travail_fute/utils/noti.dart';
 import 'package:travail_fute/utils/provider.dart';

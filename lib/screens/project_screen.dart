@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/screens/create_project_screen.dart'; // New screen for creation
+import 'package:travail_fute/screens/clients.dart';
+// New screen for creation
+import 'package:travail_fute/screens/project_detail_screen.dart';
 // import 'package:http/http.dart' as http;
 // import 'dart:convert';
 
 import 'package:travail_fute/services/project_service.dart';
+import 'package:travail_fute/utils/provider.dart';
 
 class ProjectScreen extends StatefulWidget {
   const ProjectScreen({super.key});
@@ -19,6 +23,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
   late AnimationController _controller;
   late Animation<double> _animation;
   final projectService = ProjectService();
+  
 
   @override
   void initState() {
@@ -150,60 +155,69 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
 
   Widget _buildProjectCard(Size size, double width, int index) {
     final project = projects[index];
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: width * 0.015),
-      padding: EdgeInsets.all(width * 0.03),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProjectDetailScreen(project: project,
           ),
-        ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            project['name'],
-            style: TextStyle(
-              fontSize: width * 0.045,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: width * 0.015),
+        padding: EdgeInsets.all(width * 0.03),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          ),
-          SizedBox(height: width * 0.01),
-          Text(
-            'Client: ${project['client']}',
-            style: TextStyle(
-              fontSize: width * 0.035,
-              color: Colors.grey[600],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              project['name'],
+              style: TextStyle(
+                fontSize: width * 0.045,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
-          ),
-          SizedBox(height: width * 0.01),
-          Row(
-            children: [
-              Text(
-                'Start: ${project['start_date']}',
-                style: TextStyle(
-                  fontSize: width * 0.035,
-                  color: kTravailFuteMainColor,
-                ),
+            SizedBox(height: width * 0.01),
+            Text(
+              'Client: ${project['client']}',
+              style: TextStyle(
+                fontSize: width * 0.035,
+                color: Colors.grey[600],
               ),
-              SizedBox(width: width * 0.03),
-              Text(
-                'End: ${project['end_date']}',
-                style: TextStyle(
-                  fontSize: width * 0.035,
-                  color: kTravailFuteMainColor,
+            ),
+            SizedBox(height: width * 0.01),
+            Row(
+              children: [
+                Text(
+                  'Start: ${project['start_date']}',
+                  style: TextStyle(
+                    fontSize: width * 0.035,
+                    color: kTravailFuteMainColor,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                SizedBox(width: width * 0.03),
+                Text(
+                  'End: ${project['end_date']}',
+                  style: TextStyle(
+                    fontSize: width * 0.035,
+                    color: kTravailFuteMainColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -244,7 +258,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
               ),
               SizedBox(height: width * 0.02),
               Text(
-                'Add a new project to get started!',
+                'Ajoutez un nouveau projet pour commencer !',
                 style: TextStyle(
                   fontSize: width * 0.04,
                   color: Colors.grey[500],
@@ -283,10 +297,11 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
   }
 
   Widget _buildFAB(double width) {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
     return FloatingActionButton(
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const CreateProjectScreen()),
+        MaterialPageRoute(builder: (context) =>  ClientsList(deviceToken: token)),
       ),
       backgroundColor: kTravailFuteMainColor,
       elevation: 8,

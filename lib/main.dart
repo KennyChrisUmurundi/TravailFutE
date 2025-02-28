@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/providers/message_provider.dart';
@@ -8,7 +7,6 @@ import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'utils/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
