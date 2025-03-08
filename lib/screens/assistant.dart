@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:travail_fute/services/credential_service.dart';
+import 'package:travail_fute/utils/provider.dart'; // Assuming TokenProvider is here
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
 
 class Assistant extends StatefulWidget {
   const Assistant({super.key});
@@ -15,6 +22,24 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
   late Animation<double> _animation;
   bool _isLoading = false;
 
+  // API Endpoints
+  final Map<String, String> _apiEndpoints = {
+    'estimates': '$apiUrl/estimates/',
+    'clients': '$apiUrl/clients/',
+    'services': '$apiUrl/invoice/services/',
+    'bills': '$apiUrl/bills/',
+    'notifications': '$apiUrl/notifications/',
+    'projects': '$apiUrl/project/projects/',
+  };
+
+  // Cached Data
+  List<Map<String, dynamic>> _availableClients = [];
+  List<Map<String, dynamic>> _availableServices = [];
+
+  // State for creation flow
+  Map<String, dynamic>? _creationData;
+  String? _creationStep;
+
   @override
   void initState() {
     super.initState();
@@ -25,10 +50,11 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
     _messages.add({
-      'text': 'Hello! How can I assist you today?',
+      'text': 'Bonjour ! Comment puis-je vous aider aujourd’hui ? Posez-moi une question ou demandez-moi de créer quelque chose !',
       'isUser': false,
       'timestamp': DateTime.now(),
     });
+    _fetchInitialData();
   }
 
   @override
@@ -38,30 +64,373 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+  Future<void> _fetchInitialData() async {
+    await _fetchClients();
+    await _fetchServices();
+  }
 
+  Future<void> _fetchClients() async {
+    try {
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      final response = await http.get(
+        Uri.parse(_apiEndpoints['clients']!),
+        headers: {'Authorization': 'Token $token'},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body)['results'];
+        setState(() {
+          _availableClients = data.map((client) => {
+            'id': client['id'],
+            'phone_number': client['phone_number'],
+            'is_active': client['is_active'] ?? true, // Assuming an 'is_active' field
+          }).toList();
+        });
+      }
+    } catch (e) {
+      _addMessage('Erreur lors de la récupération des clients : $e', false);
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    try {
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      final response = await http.get(
+        Uri.parse(_apiEndpoints['services']!),
+        headers: {'Authorization': 'Token $token'},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body)['results'];
+        setState(() {
+          _availableServices = data.map((service) => {
+            'id': service['id'],
+            'name': service['name'],
+            'description': service['description'],
+            'base_price': double.parse(service['base_price'].toString()),
+          }).toList();
+        });
+      }
+    } catch (e) {
+      _addMessage('Erreur lors de la récupération des services : $e', false);
+    }
+  }
+
+  Future<void> _fetchData(String endpoint, Function(List<dynamic>) onSuccess) async {
+    try {
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      final response = await http.get(
+        Uri.parse(_apiEndpoints[endpoint]!),
+        headers: {'Authorization': 'Token $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        onSuccess(data is List ? data : data['results']);
+      } else {
+        _addMessage('Erreur lors de la récupération des données : ${response.reasonPhrase}', false);
+      }
+    } catch (e) {
+      _addMessage('Erreur : $e', false);
+    }
+  }
+
+  void _addMessage(String text, bool isUser) {
     setState(() {
       _messages.add({
-        'text': _messageController.text,
-        'isUser': true,
+        'text': text,
+        'isUser': isUser,
         'timestamp': DateTime.now(),
       });
-      _isLoading = true;
     });
+  }
 
-    _messageController.clear();
+  Future<String> _getResponseFromOpenAI(String input) async {
+    String _openAiApiKey = await CredentialService().getOpenAiKey();
+    const String systemPrompt = '''
+    Vous êtes un assistant IA pour une application de gestion en français (devis, factures, clients, services, notifications, projets). Votre rôle est de :
+    - Répondre aux questions de l'utilisateur en utilisant les données fournies (clients, services) ou en demandant des clarifications.
+    - Si l'utilisateur veut créer une entité, poser la première question du processus de création de manière naturelle (ex. "Super ! Quel est le numéro de téléphone du client ?" pour un client).
+    - Les entités valides pour la création sont : clients, services, factures (bills), devis (estimates), notifications, projets. Si une entité demandée n’est pas dans cette liste, informer l'utilisateur de manière conviviale (ex. "Je ne peux pas créer cela. Essayez client, service, facture, devis, notification ou projet.").
+    - Fournir des réponses naturelles et contextuelles en français, en maintenant une conversation fluide.
+    - Ne pas utiliser de marqueurs comme [[CREATE:entity]], mais guider l'utilisateur étape par étape si une création est détectée.
 
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _messages.add({
-          'text': 'I\'m processing your request. How else can I help?',
-          'isUser': false,
-          'timestamp': DateTime.now(),
+    Données actuelles :
+    - Clients : {{clients}}
+    - Services : {{services}}
+
+    Historique de la conversation :
+    {{history}}
+    ''';
+
+  String clientsJson = jsonEncode(_availableClients);
+  String servicesJson = jsonEncode(_availableServices);
+  String history = _messages.map((m) => '${m['isUser'] ? 'Utilisateur' : 'Assistant'} : ${m['text']}').join('\n');
+
+  String prompt = systemPrompt
+      .replaceAll('{{clients}}', clientsJson)
+      .replaceAll('{{services}}', servicesJson)
+      .replaceAll('{{history}}', history) +
+      '\nUtilisateur : $input\nAssistant : ';
+
+  try {
+    final response = await http.post(
+      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      headers: {
+        'Authorization': 'Bearer $_openAiApiKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': 'gpt-3.5-turbo',
+        'messages': [
+          {'role': 'system', 'content': prompt},
+          {'role': 'user', 'content': input},
+        ],
+        'max_tokens': 200,
+        'temperature': 0.7,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['choices'][0]['message']['content'].trim();
+    } else {
+      return 'Erreur OpenAI : ${response.reasonPhrase}';
+    }
+  } catch (e) {
+    return 'Erreur lors de l’appel à OpenAI : $e';
+  }
+}
+
+  void _processInput(String input) async {
+  setState(() => _isLoading = true);
+
+  if (_creationStep != null) {
+    _processCreationStep(input.toLowerCase());
+    setState(() => _isLoading = false);
+    return;
+  }
+
+  String response = await _getResponseFromOpenAI(input);
+  _addMessage(response, false);
+
+  setState(() => _isLoading = false);
+}
+
+  void _startCreation(String entity) {
+    _creationData = {
+      'entity': entity,
+    };
+    switch (entity) {
+      case 'clients':
+        _creationStep = 'client_phone';
+        _addMessage('Super ! Quel est le numéro de téléphone du client ?', false);
+        break;
+      case 'services':
+        _creationStep = 'service_name';
+        _addMessage('Super ! Quel est le nom du service ?', false);
+        break;
+      case 'bills':
+      case 'estimates':
+        _creationData?.addAll({
+          'client': null,
+          'expiration_date': null,
+          'due_date': null,
+          'description': 'Services rendus',
+          'vat_rate': 21.0,
+          'hourly_rate': null,
+          'hours_worked': null,
+          'items': [],
         });
-        _isLoading = false;
-      });
-    });
+        _creationStep = 'client';
+        _addMessage('Super ! Pour quel client est cette ${entity == 'estimates' ? 'devis' : 'facture'} ? (ex. numéro de téléphone)', false);
+        break;
+      case 'notifications':
+        _creationStep = 'notification_message';
+        _addMessage('Super ! Quel est le message de la notification ?', false);
+        break;
+      case 'projects':
+        _creationStep = 'project_name';
+        _addMessage('Super ! Quel est le nom du projet ?', false);
+        break;
+    }
+  }
+
+  void _processCreationStep(String input) {
+  final lowerInput = input.toLowerCase();
+
+  // If no creation step is set, infer it from OpenAI's response context
+  if (_creationStep == null) {
+    if (_messages.last['text'].contains('numéro de téléphone du client')) {
+      _creationData = {'entity': 'clients'};
+      _creationStep = 'client_phone';
+    } else if (_messages.last['text'].contains('nom du service')) {
+      _creationData = {'entity': 'services'};
+      _creationStep = 'service_name';
+    } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('facture')) {
+      _creationData = {'entity': 'bills', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
+      _creationStep = 'client';
+    } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('devis')) {
+      _creationData = {'entity': 'estimates', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
+      _creationStep = 'client';
+    } else if (_messages.last['text'].contains('message de la notification')) {
+      _creationData = {'entity': 'notifications'};
+      _creationStep = 'notification_message';
+    } else if (_messages.last['text'].contains('nom du projet')) {
+      _creationData = {'entity': 'projects'};
+      _creationStep = 'project_name';
+    }
+  }
+
+  // Proceed with the creation steps
+  switch (_creationStep) {
+    case 'client_phone':
+      _creationData!['phone_number'] = input.trim();
+      _creationStep = 'review';
+      _addMessage('Client avec numéro ${input.trim()}. Voulez-vous soumettre ceci ? (Oui/Non)', false);
+      break;
+
+    case 'service_name':
+      _creationData!['name'] = input;
+      _creationStep = 'service_description';
+      _addMessage('Nom du service : $input. Quelle est la description ?', false);
+      break;
+    case 'service_description':
+      _creationData!['description'] = input;
+      _creationStep = 'service_price';
+      _addMessage('Description : $input. Quel est le prix de base ? (ex. 100)', false);
+      break;
+    case 'service_price':
+      if (double.tryParse(input) != null && double.parse(input) >= 0) {
+        _creationData!['base_price'] = double.parse(input);
+        _creationStep = 'review';
+        _addMessage('Service : ${_creationData!['name']}, Description : ${_creationData!['description']}, Prix : ${_creationData!['base_price']} €. Voulez-vous soumettre ceci ? (Oui/Non)', false);
+      } else {
+        _addMessage('Veuillez entrer un prix valide (ex. 100).', false);
+      }
+      break;
+
+    case 'client':
+      final client = _availableClients.firstWhere(
+        (c) => c['phone_number'].toString().contains(input.trim()),
+        orElse: () => {},
+      );
+      if (client.isNotEmpty) {
+        _creationData!['client'] = client;
+        _creationStep = 'services';
+        _addMessage('Parfait, client ${client['phone_number']}. Quels services voulez-vous inclure ? (Dites "liste des services" pour voir les options)', false);
+      } else {
+        _addMessage('Client non trouvé. Veuillez fournir un numéro parmi : ${_availableClients.map((c) => c['phone_number']).join(', ')}', false);
+      }
+      break;
+    // ... (rest of the cases remain unchanged)
+  }
+}
+
+  void _showCreationReview() {
+    final entity = _creationData!['entity'];
+    if (entity == 'estimates' || entity == 'bills') {
+      final isEstimate = entity == 'estimates';
+      _creationData![isEstimate ? 'expiration_date' : 'due_date'] =
+          DateTime.now().add(Duration(days: 30)).toIso8601String().split('T')[0];
+      String summary = 'Voici ce que j\'ai :\n'
+          '- Type : ${isEstimate ? 'Devis' : 'Facture'}\n'
+          '- Client : ${_creationData!['client']['phone_number']}\n'
+          '- Services : ${_creationData!['items'].map((item) => "${_availableServices.firstWhere((s) => s['id'] == item['service'])['name']} x ${item['quantity']}").join(', ')}\n'
+          '- Taux horaire : ${_creationData!['hourly_rate']} €, Heures : ${_creationData!['hours_worked']}\n'
+          '- TVA : ${_creationData!['vat_rate']}%, ${isEstimate ? 'Expire le' : 'Due le'} : ${_creationData![isEstimate ? 'expiration_date' : 'due_date']}\n'
+          '- Description : ${_creationData!['description']}\n'
+          'Voulez-vous soumettre ceci ? (Oui/Non)';
+      _addMessage(summary, false);
+    }
+  }
+
+  Future<void> _submitCreation() async {
+    final entity = _creationData!['entity'];
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+    Map<String, dynamic> payload;
+
+    switch (entity) {
+      case 'clients':
+        payload = {'phone_number': _creationData!['phone_number']};
+        break;
+      case 'services':
+        payload = {
+          'name': _creationData!['name'],
+          'description': _creationData!['description'],
+          'base_price': _creationData!['base_price'],
+        };
+        break;
+      case 'estimates':
+      case 'bills':
+        final isEstimate = entity == 'estimates';
+        payload = {
+          'client': _creationData!['client']['id'],
+          isEstimate ? 'expiration_date' : 'due_date': _creationData![isEstimate ? 'expiration_date' : 'due_date'],
+          'description': _creationData!['description'],
+          'vat_rate': _creationData!['vat_rate'],
+          'hourly_rate': _creationData!['hourly_rate'],
+          'hours_worked': _creationData!['hours_worked'],
+          isEstimate ? 'estimate_items' : 'bill_items': _creationData!['items'],
+          if (isEstimate) 'status': 'draft',
+        };
+        break;
+      case 'notifications':
+        payload = {'message': _creationData!['message']};
+        break;
+      case 'projects':
+        payload = {
+          'name': _creationData!['name'],
+          'description': _creationData!['description'],
+        };
+        break;
+      default:
+        _addMessage('Entité non reconnue pour la création.', false);
+        return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(_apiEndpoints[entity]!),
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 201) {
+        _addMessage('${_entityToFrench(entity).capitalize()} créé avec succès ! Comment puis-je vous aider maintenant ?', false);
+        if (entity == 'clients') await _fetchClients();
+        if (entity == 'services') await _fetchServices();
+      } else {
+        _addMessage('Échec de la création : ${response.reasonPhrase}', false);
+      }
+    } catch (e) {
+      _addMessage('Erreur lors de la soumission : $e', false);
+    }
+  }
+
+  String _entityToFrench(String entity) {
+    switch (entity) {
+      case 'estimates':
+        return 'devis';
+      case 'clients':
+        return 'clients';
+      case 'services':
+        return 'services';
+      case 'bills':
+        return 'factures';
+      case 'notifications':
+        return 'notifications';
+      case 'projects':
+        return 'projets';
+      default:
+        return entity;
+    }
+  }
+
+  void _sendMessage() {
+    if (_messageController.text.trim().isEmpty) return;
+    _addMessage(_messageController.text, true);
+    _processInput(_messageController.text);
+    _messageController.clear();
   }
 
   void _showSpeakDialog() {
@@ -80,24 +449,8 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
             opacity: animation,
             child: _SpeakDialog(
               onSpeak: (text) {
-                setState(() {
-                  _messages.add({
-                    'text': text,
-                    'isUser': true,
-                    'timestamp': DateTime.now(),
-                  });
-                  _isLoading = true;
-                });
-                Future.delayed(const Duration(seconds: 1), () {
-                  setState(() {
-                    _messages.add({
-                      'text': 'I heard: "$text". How can I assist further?',
-                      'isUser': false,
-                      'timestamp': DateTime.now(),
-                    });
-                    _isLoading = false;
-                  });
-                });
+                _addMessage(text, true);
+                _processInput(text);
               },
             ),
           ),
@@ -162,7 +515,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
                   ),
                   SizedBox(width: size.width * 0.03),
                   Text(
-                    'AI Assistant',
+                    'Assistant IA',
                     style: TextStyle(
                       fontSize: size.width * 0.05,
                       fontWeight: FontWeight.bold,
@@ -264,7 +617,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
             ),
             SizedBox(width: size.width * 0.02),
             Text(
-              'Typing...',
+              'En train d\'écrire...',
               style: TextStyle(color: Colors.grey[600], fontSize: size.width * 0.04),
             ),
           ],
@@ -292,7 +645,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: 'Type your message...',
+                hintText: 'Tapez votre message...',
                 hintStyle: TextStyle(color: Colors.grey[400]),
                 filled: true,
                 fillColor: Colors.grey[100],
@@ -365,6 +718,8 @@ class _SpeakDialogState extends State<_SpeakDialog> with SingleTickerProviderSta
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   bool _isRecording = false;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  String _recognizedText = '';
 
   @override
   void initState() {
@@ -376,26 +731,77 @@ class _SpeakDialogState extends State<_SpeakDialog> with SingleTickerProviderSta
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _initializeSpeech();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _speech.stop();
     super.dispose();
   }
 
-  void _toggleRecording() {
-    setState(() {
-      _isRecording = !_isRecording;
-    });
-
-    if (!_isRecording) {
-      // Simulate speech-to-text (replace with actual implementation)
-      Future.delayed(const Duration(seconds: 2), () {
-        widget.onSpeak('Sample voice input');
-        Navigator.pop(context);
-      });
+  Future<void> _initializeSpeech() async {
+    if (await Permission.microphone.request().isGranted) {
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            setState(() {
+              _isRecording = false;
+              _pulseController.stop();
+            });
+            if (_recognizedText.isNotEmpty) {
+              widget.onSpeak(_recognizedText);
+              Navigator.pop(context);
+            }
+          }
+        },
+        onError: (error) => print('Speech error: $error'),
+      );
+      if (!available) {
+        _showError('Impossible d\'initialiser la reconnaissance vocale.');
+      }
+    } else {
+      _showError('Permission de microphone refusée.');
     }
+  }
+
+  void _toggleRecording() async {
+    if (_isRecording) {
+      await _speech.stop();
+      setState(() {
+        _isRecording = false;
+        _pulseController.stop();
+      });
+      if (_recognizedText.isNotEmpty) {
+        widget.onSpeak(_recognizedText);
+        Navigator.pop(context);
+      }
+    } else {
+      if (await _speech.initialize()) {
+        setState(() {
+          _isRecording = true;
+          _recognizedText = '';
+          _pulseController.repeat(reverse: true);
+        });
+        await _speech.listen(
+          onResult: (result) {
+            setState(() {
+              _recognizedText = result.recognizedWords;
+            });
+          },
+          localeId: 'fr_FR', // French language
+        );
+      } else {
+        _showError('Erreur lors du démarrage de la reconnaissance vocale.');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -423,7 +829,7 @@ class _SpeakDialogState extends State<_SpeakDialog> with SingleTickerProviderSta
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _isRecording ? 'Listening...' : 'Speak Now',
+              _isRecording ? 'Écoute en cours...' : 'Parlez maintenant',
               style: TextStyle(
                 fontSize: size.width * 0.05,
                 fontWeight: FontWeight.bold,
@@ -459,15 +865,32 @@ class _SpeakDialogState extends State<_SpeakDialog> with SingleTickerProviderSta
             SizedBox(height: size.height * 0.03),
             if (_isRecording)
               Text(
-                'Tap to stop',
+                'Appuyez pour arrêter',
                 style: TextStyle(
                   fontSize: size.width * 0.04,
                   color: Colors.grey[600],
+                ),
+              ),
+            if (_recognizedText.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: size.height * 0.02),
+                child: Text(
+                  'Reconnu : "$_recognizedText"',
+                  style: TextStyle(
+                    fontSize: size.width * 0.04,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
           ],
         ),
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
