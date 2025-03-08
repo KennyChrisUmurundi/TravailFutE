@@ -41,6 +41,7 @@ void main() async {
     ),
   );
 }
+
 Future<void> requestPermissions(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
   final statuses = await [
     Permission.phone,
@@ -58,7 +59,6 @@ Future<void> requestPermissions(FlutterLocalNotificationsPlugin flutterLocalNoti
     }
   });
 }
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

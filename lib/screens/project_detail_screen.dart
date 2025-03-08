@@ -257,7 +257,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
           ),
         ),
       ),
-      floatingActionButton: _buildFAB(width),
+      // floatingActionButton: _buildFAB(width),
     );
   }
 

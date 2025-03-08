@@ -43,6 +43,8 @@ dependencies:
     # flutter_datetime_picker: ^1.5.1
     image_picker: ^1.1.2
     cached_network_image: ^3.4.1
+    syncfusion_flutter_pdfviewer: 28.2.9
+    share_plus: ^10.1.4
 dev_dependencies:
     flutter_test:
         sdk: flutter

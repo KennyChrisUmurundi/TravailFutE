@@ -20,15 +20,36 @@ class ProjectService{
         url,
         headers: {'Authorization': 'Token $token'},
       );
-      print(" THis is the resp ${response.body}");
+      print("This is the resp ${response.body}");
       checkInvalidTokenOrUser(context, response);
       if (response.statusCode == 200) {
         projects = jsonDecode(response.body)['results'];
         print("Projects: $projects");
         return projects;
       } else {
-        
         throw Exception('Failed to load projects');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List> fetchProjectsByClient(BuildContext context, int clientId) async {
+    try {
+      final url = Uri.parse("$apiUrl/projects/by-client/$clientId");
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Token $token'},
+      );
+      print("This is the resp one${response.body}");
+      checkInvalidTokenOrUser(context, response);
+      if (response.statusCode == 200) {
+        projects = jsonDecode(response.body);
+        print("Projects by client: $projects");
+        return projects;
+      } else {
+        throw Exception('Failed to load projects by client');
       }
     } catch (e) {
       throw Exception('Error: $e');

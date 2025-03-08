@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/create_project_screen.dart';
+import 'package:travail_fute/screens/new_estimate_screen.dart';
+import 'package:travail_fute/screens/new_invoice_screen.dart';
+import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/services/clients_service.dart';
+import 'package:travail_fute/services/project_service.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 import 'package:travail_fute/screens/edit_client.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +24,8 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  final ProjectService projectService = ProjectService();
+  List<dynamic> projects = [];
 
   @override
   void initState() {
@@ -32,7 +38,6 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
     _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-
     if (widget.phoneNumber != null) {
       clientService.getClientByPhone(context, widget.phoneNumber!).then((client) {
         setState(() {
@@ -40,12 +45,27 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
         });
       });
     }
+    fetchClientProjects();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  fetchClientProjects() async {
+    await projectService.fetchProjectsByClient(context, widget.client['id']).then((value) {
+      setState(() {
+        projects = value;
+      });
+    }).catchError((error) {
+      print(error);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Échec du chargement des chantiers : $error'),
+        backgroundColor: Colors.red,
+      ));
+    });
   }
 
   @override
@@ -289,8 +309,8 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                   onPress: () {},
                   label: 'Devis',
                   icon: Icons.euro,
-                  value: 1,
-                  completed: 5,
+                  value: 0,
+                  completed: 2,
                   cardColor: kWhiteColor,
                 ),
               ),
@@ -301,8 +321,8 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                   onPress: () {},
                   label: 'Factures',
                   icon: Icons.receipt,
-                  value: 89,
-                  completed: 89,
+                  value: 0,
+                  completed:2,
                   cardColor: kWhiteColor,
                 ),
               ),
@@ -314,7 +334,15 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {},
+                  onPress: () { 
+                    fetchClientProjects();
+                    Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProjectScreen(projects: projects),
+                    ),
+                  );
+                  },
                   label: 'Chantiers',
                   icon: Icons.build,
                   value: 89,
@@ -344,193 +372,197 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   }
 
   Widget _buildEditFAB(double width) {
-  return FloatingActionButton(
-    onPressed: () => _showActionDialog(context, width),
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    child: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: kTravailFuteMainColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return FloatingActionButton(
+      onPressed: () => _showActionDialog(context, width),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
           ),
-        ],
-      ),
-      padding: EdgeInsets.all(width * 0.04),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Icon(Icons.add, color: kWhiteColor, size: width * 0.07), // Changed to "add" icon
-      ),
-    ),
-  );
-}
-
-void _showActionDialog(BuildContext context, double width) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withOpacity(0.4),
-    transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return Center(
-        child: Material(
-          color: Colors.transparent,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: kTravailFuteMainColor.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Container(
-              width: width * 0.8,
-              padding: EdgeInsets.all(width * 0.05),
-              decoration: BoxDecoration(
-                color: kWhiteColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          ],
+        ),
+        padding: EdgeInsets.all(width * 0.04),
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Icon(Icons.add, color: kWhiteColor, size: width * 0.07), // Changed to "add" icon
+        ),
+      ),
+    );
+  }
+
+  void _showActionDialog(BuildContext context, double width) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black.withOpacity(0.4),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Text(
-                    'Nouvelle Action',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: width * 0.05,
-                      fontWeight: FontWeight.w600,
-                      color: kTravailFuteMainColor,
+              child: Container(
+                width: width * 0.8,
+                padding: EdgeInsets.all(width * 0.05),
+                decoration: BoxDecoration(
+                  color: kWhiteColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  SizedBox(height: width * 0.04),
-                  // Action Options
-                  _buildActionOption(
-                    context: context,
-                    width: width,
-                    icon: Icons.construction,
-                    label: 'Nouveau Chantier',
-                    color: kTravailFuteMainColor,
-                    onTap: () {
-                      Navigator.push(
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Text(
+                      'Nouvelle Action',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: width * 0.05,
+                        fontWeight: FontWeight.w600,
+                        color: kTravailFuteMainColor,
+                      ),
+                    ),
+                    SizedBox(height: width * 0.04),
+                    // Action Options
+                    _buildActionOption(
+                      context: context,
+                      width: width,
+                      icon: Icons.construction,
+                      label: 'Nouveau Chantier',
+                      color: kTravailFuteMainColor,
+                      onTap: () {
+                        Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => CreateProjectScreen(user: widget.client)),
                         );
-                    },
-                  ),
-                  SizedBox(height: width * 0.03),
-                  _buildActionOption(
-                    context: context,
-                    width: width,
-                    icon: Icons.euro,
-                    label: 'Nouveau Devis',
-                    color: kTravailFuteSecondaryColor,
-                    onTap: () {
-                      Navigator.pop(context);
-                      
-                    },
-                  ),
-                  SizedBox(height: width * 0.03),
-                  _buildActionOption(
-                    context: context,
-                    width: width,
-                    icon: Icons.receipt,
-                    label: 'Nouvelle Facture',
-                    color: const Color.fromARGB(255, 97, 97, 97),
-                    onTap: () {
-                      Navigator.pop(context);
-                      
-                    },
-                  ),
-                  SizedBox(height: width * 0.03),
-                  _buildActionOption(
-                    context: context,
-                    width: width,
-                    icon: Icons.edit,
-                    label: 'Modifier Client',
-                    color: Colors.grey[700]!,
-                    onTap: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => EditClient(client: widget.client)),
-                      );
-                    },
-                  ),
-                  SizedBox(height: width * 0.04),
-                  // Cancel Button
-                  Align(
-                    alignment: Alignment.center,
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Annuler',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: width * 0.04,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+                      },
+                    ),
+                    SizedBox(height: width * 0.03),
+                    _buildActionOption(
+                      context: context,
+                      width: width,
+                      icon: Icons.euro,
+                      label: 'Nouveau Devis',
+                      color: kTravailFuteSecondaryColor,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                            MaterialPageRoute(builder: (context) => NewEstimateScreen(client: widget.client)),
+                        );
+                      },
+                    ),
+                    SizedBox(height: width * 0.03),
+                    _buildActionOption(
+                      context: context,
+                      width: width,
+                      icon: Icons.receipt,
+                      label: 'Nouvelle Facture',
+                      color: const Color.fromARGB(255, 81, 175, 97),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                            MaterialPageRoute(builder: (context) => NewInvoiceScreen(client: widget.client)),
+                        );
+                      },
+                    ),
+                    SizedBox(height: width * 0.03),
+                    _buildActionOption(
+                      context: context,
+                      width: width,
+                      icon: Icons.edit,
+                      label: 'Modifier Client',
+                      color: Colors.grey[700]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => EditClient(client: widget.client)),
+                        );
+                      },
+                    ),
+                    SizedBox(height: width * 0.04),
+                    // Cancel Button
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Annuler',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: width * 0.04,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-Widget _buildActionOption({
-  required BuildContext context,
-  required double width,
-  required IconData icon,
-  required String label,
-  required Color color,
-  required VoidCallback onTap,
-}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: EdgeInsets.symmetric(vertical: width * 0.03, horizontal: width * 0.04),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: width * 0.06),
-          SizedBox(width: width * 0.03),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: width * 0.045,
-                fontWeight: FontWeight.w500,
-                color: color,
+  Widget _buildActionOption({
+    required BuildContext context,
+    required double width,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: width * 0.03, horizontal: width * 0.04),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: width * 0.06),
+            SizedBox(width: width * 0.03),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: width * 0.045,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
               ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: color.withOpacity(0.5), size: width * 0.05),
-        ],
+            Icon(Icons.chevron_right, color: color.withOpacity(0.5), size: width * 0.05),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _launchURL(Uri? url) async {
     if (url != null && await canLaunchUrl(url)) {

@@ -6,22 +6,21 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'package:travail_fute/screens/pdf_viewer_screen.dart';
 import 'package:travail_fute/utils/provider.dart';
 
-class NewInvoiceScreen extends StatefulWidget {
+class NewEstimateScreen extends StatefulWidget {
   final Map<String, dynamic> client;
 
-  const NewInvoiceScreen({required this.client, super.key});
+  const NewEstimateScreen({required this.client, super.key});
 
   @override
-  State<NewInvoiceScreen> createState() => _NewInvoiceScreenState();
+  State<NewEstimateScreen> createState() => _NewEstimateScreenState();
 }
 
-class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerProviderStateMixin {
+class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  final List<Map<String, dynamic>> _billItems = [];
+  final List<Map<String, dynamic>> _estimateItems = [];
   List<Map<String, dynamic>> _availableServices = [];
   final double _vatRate = 0.21; // Default 21% VAT
   final TextEditingController _hourlyRateController = TextEditingController();
@@ -29,7 +28,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
   final TextEditingController _descriptionController = TextEditingController();
   bool _isLoadingServices = true;
 
-  double get _servicesSubTotal => _billItems.fold(0.0, (sum, item) {
+  double get _servicesSubTotal => _estimateItems.fold(0.0, (sum, item) {
         final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
         return sum + (service['base_price'] as double) * (item['quantity'] as int);
       });
@@ -110,7 +109,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Service created successfully')),
         );
-        return data['id']; // Return the new service ID
+        return data['id'];
       } else {
         throw Exception('Failed to create service: ${response.reasonPhrase}');
       }
@@ -122,8 +121,8 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
     }
   }
 
-  Future<void> _submitInvoice() async {
-    if (_billItems.isEmpty || _hourlyRateController.text.isEmpty || _hoursWorkedController.text.isEmpty) {
+  Future<void> _submitEstimate() async {
+    if (_estimateItems.isEmpty || _hourlyRateController.text.isEmpty || _hoursWorkedController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all required fields')),
       );
@@ -132,41 +131,36 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
 
     final payload = {
       'client': widget.client['id'],
-      'due_date': DateTime.now().add(Duration(days: 30)).toIso8601String().split('T')[0],
-      'description': _descriptionController.text.isEmpty ? 'Services rendered' : _descriptionController.text,
+      'expiration_date': DateTime.now().add(Duration(days: 30)).toIso8601String().split('T')[0], // Added expiration
+      'description': _descriptionController.text.isEmpty ? 'Estimate for services' : _descriptionController.text,
       'vat_rate': _vatRate * 100,
       'hourly_rate': double.parse(_hourlyRateController.text),
       'hours_worked': double.parse(_hoursWorkedController.text),
-      'bill_items': _billItems,
+      'estimate_items': _estimateItems, // Changed key to reflect estimate
+      'status': 'draft', // Optional: Add status for estimate workflow
     };
 
     try {
       final token = Provider.of<TokenProvider>(context, listen: false).token;
       final response = await http.post(
-        Uri.parse('$apiUrl/bill/manage/'),
+        Uri.parse('$apiUrl/invoice/estimates/'), // New endpoint for estimates
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(payload),
       );
-      print("response is ${response.body}");
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invoice created successfully')),
+          SnackBar(content: Text('Estimate created successfully')),
         );
-        final responseData = jsonDecode(response.body);
         Navigator.pop(context);
-        Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PdfViewerScreen(bill: responseData["id"].toString())),
-            );
       } else {
-        throw Exception('Failed to create invoice: ${response.reasonPhrase}');
+        throw Exception('Failed to create estimate: ${response.reasonPhrase}');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating invoice: $e')),
+        SnackBar(content: Text('Error creating estimate: $e')),
       );
     }
   }
@@ -189,7 +183,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
               availableServices: _availableServices,
               onAdd: (serviceId, quantity) {
                 setState(() {
-                  _billItems.add({
+                  _estimateItems.add({
                     'service': serviceId,
                     'quantity': quantity,
                   });
@@ -275,7 +269,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
             child: FadeTransition(
               opacity: _animation,
               child: Text(
-                'Nouvelle Facture pour Client #${widget.client['phone_number']}',
+                'Nouveau Devis pour Client #${widget.client['phone_number']}',
                 style: TextStyle(fontSize: size.width * 0.05, fontWeight: FontWeight.bold, color: kTravailFuteMainColor),
               ),
             ),
@@ -310,7 +304,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
             decoration: InputDecoration(
-              labelText: 'Heures travaillées',
+              labelText: 'Heures estimées',
               prefixIcon: Icon(Icons.timer, color: kTravailFuteMainColor),
               filled: true,
               fillColor: Colors.grey[100],
@@ -337,13 +331,13 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
   }
 
   Widget _buildServiceList(Size size) {
-    return _billItems.isEmpty
+    return _estimateItems.isEmpty
         ? _buildEmptyState(size)
         : ListView.builder(
             padding: EdgeInsets.all(size.width * 0.04),
-            itemCount: _billItems.length,
+            itemCount: _estimateItems.length,
             itemBuilder: (context, index) {
-              final item = _billItems[index];
+              final item = _estimateItems[index];
               final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
               return FadeTransition(
                 opacity: _animation,
@@ -401,7 +395,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => setState(() => _billItems.removeAt(index)),
+              onPressed: () => setState(() => _estimateItems.removeAt(index)),
             ),
           ],
         ),
@@ -477,14 +471,14 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
 
   Widget _buildSubmitButton(Size size) {
     return ElevatedButton(
-      onPressed: _submitInvoice,
+      onPressed: _submitEstimate,
       style: ElevatedButton.styleFrom(
         backgroundColor: kTravailFuteMainColor,
         padding: EdgeInsets.symmetric(horizontal: size.width * 0.1, vertical: size.height * 0.015),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
       child: Text(
-        'Créer la facture',
+        'Créer le devis',
         style: TextStyle(color: Colors.white, fontSize: size.width * 0.045, fontWeight: FontWeight.bold),
       ),
     );

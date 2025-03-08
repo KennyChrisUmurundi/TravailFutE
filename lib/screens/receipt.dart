@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:travail_fute/screens/pdf_viewer_screen.dart';
+import 'package:travail_fute/services/receipt_service.dart';
+// import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -13,10 +16,9 @@ class ReceiptScreen extends StatefulWidget {
 class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  final List<Map<String, dynamic>> _receipts = [
-    {'id': 'REC001', 'client': 'John Doe', 'date': DateTime.now().subtract(const Duration(days: 5)), 'total': 150.0},
-    {'id': 'REC002', 'client': 'Jane Smith', 'date': DateTime.now().subtract(const Duration(days: 2)), 'total': 220.0},
-  ];
+  List<Map<String, dynamic>> _receipts = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
       vsync: this,
     )..forward();
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    fetchReceipts();
   }
 
   @override
@@ -34,12 +37,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  void _navigateToNewInvoice() {
-    Navigator.push(
-  context,
-  MaterialPageRoute(builder: (context) => const NewInvoiceScreen()),
-);
+  void fetchReceipts() async {
+    try {
+      final receipts = await ReceiptService().fetchReceipts(context);
+      setState(() {
+        _receipts = receipts.cast<Map<String, dynamic>>();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Échec du chargement des factures';
+        _isLoading = false;
+      });
+    }
   }
+
+  void _navigateToNewInvoice() {
+    
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -57,7 +73,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
           child: Column(
             children: [
               _buildHeader(size),
-              Expanded(child: _buildReceiptList(size)),
+              Expanded(child: _buildContent(size)),
             ],
           ),
         ),
@@ -89,7 +105,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
             child: FadeTransition(
               opacity: _animation,
               child: Text(
-                'Receipts',
+                'Factures',
                 style: TextStyle(
                   fontSize: size.width * 0.05,
                   fontWeight: FontWeight.bold,
@@ -101,6 +117,16 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
         ],
       ),
     );
+  }
+
+  Widget _buildContent(Size size) {
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator(color: kTravailFuteMainColor,));
+    } else if (_errorMessage != null) {
+      return Center(child: Text(_errorMessage!));
+    } else {
+      return _buildReceiptList(size);
+    }
   }
 
   Widget _buildReceiptList(Size size) {
@@ -131,7 +157,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Invoice #${receipt['id']}',
+                    'Facture #${receipt['id']}',
                     style: TextStyle(
                       fontSize: size.width * 0.045,
                       fontWeight: FontWeight.bold,
@@ -144,11 +170,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
                     style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
                   ),
                   Text(
-                    'Date: ${DateFormat('MMM dd, yyyy').format(receipt['date'] as DateTime)}',
+                    'Date: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(receipt['created_at']))}',
                     style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
                   ),
                   Text(
-                    'Total: \$${receipt['total'].toStringAsFixed(2)}',
+                    'Total: €${receipt['amount']}',
                     style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
                   ),
                 ],
@@ -156,8 +182,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
             ),
             IconButton(
               icon: const Icon(Icons.visibility, color: kTravailFuteMainColor),
-              onPressed: () {
-                // Navigate to invoice details or summary if needed
+              onPressed: () async {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PdfViewerScreen(bill: receipt['id'].toString())
+                      ,
+                    ),
+                  );
               },
             ),
           ],

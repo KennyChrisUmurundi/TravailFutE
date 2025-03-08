@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 // Function to get responsive font size
+const String apiUrl = "https://tfte.azurewebsites.net/api/";
 double getResponsiveFontSize(BuildContext context, double fontSize) {
   return fontSize * MediaQuery.of(context).size.width / 375;
 }

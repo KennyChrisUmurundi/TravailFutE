@@ -11,7 +11,9 @@ import 'package:travail_fute/services/project_service.dart';
 import 'package:travail_fute/utils/provider.dart';
 
 class ProjectScreen extends StatefulWidget {
-  const ProjectScreen({super.key});
+  final List<dynamic>? projects;
+
+  const ProjectScreen({super.key, this.projects});
 
   @override
   State<ProjectScreen> createState() => _ProjectScreenState();
@@ -28,6 +30,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
+    projects = widget.projects ?? [];
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -46,13 +49,13 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
     setState(() => isLoading = true);
     projectService.fetchProjects(context).then((value) {
       setState(() {
-        projects = value;
+        projects = widget.projects ?? value;
         isLoading = false;
       });
     }).catchError((error) {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to load projects: $error'),
+        content: Text('Échec du chargement des projets : $error'),
         backgroundColor: Colors.red,
       ));
     });
