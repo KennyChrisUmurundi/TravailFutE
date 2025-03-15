@@ -12,6 +12,7 @@ import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
 import 'package:flutter_sms_manager/flutter_sms_manager.dart';
+import 'package:travail_fute/utils/logger.dart';
 import 'clients.dart';
 
 class HomePage extends StatefulWidget {
@@ -60,7 +61,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       final smsList = await SmsManager.fetchSms();
       setState(() => _smsList = smsList);
     } catch (e) {
-      print('Error fetching SMS: $e');
+      logger.i('Error fetching SMS: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -185,19 +186,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       children: [
         _buildActionButton(
           size,
-          'Assistant',
+          'Mon Assistant',
           kTravailFuteMainColor,
           () => Navigator.push(context, MaterialPageRoute(builder: (_) => Assistant())),
         ),
         SizedBox(width: size.width * 0.03),
-        _buildActionButton(
-          size,
-          'Chantiers',
-          Colors.white,
-          () {},
-          textColor: kTravailFuteSecondaryColor,
-          borderColor: kTravailFuteSecondaryColor,
-        ),
+        // _buildActionButton(
+        //   size,
+        //   'Chantiers',
+        //   Colors.white,
+        //   () {},
+        //   textColor: kTravailFuteSecondaryColor,
+        //   borderColor: kTravailFuteSecondaryColor,
+        // ),
       ],
     );
   }
@@ -242,10 +243,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         Row(
           children: [
             _buildCard(size, 'Clients', Icons.people, 89, 89, () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => ClientsList(deviceToken: widget.deviceToken))),
+              context, MaterialPageRoute(builder: (_) => ClientsList())),
               addOption: true,
               onAddPress: () => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => ClientCreatePage(deviceToken: widget.deviceToken))),
+                context, MaterialPageRoute(builder: (_) => ClientCreatePage())),
             ),
             SizedBox(width: size.width * 0.03),
             _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
@@ -270,10 +271,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             _buildCard(size, 'Devis', Icons.euro, 1, 5, () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => Assistant()))),
             SizedBox(width: size.width * 0.03),
-            _buildCard(size, 'Factures', Icons.receipt, 89, 89, () =>Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
-            )),
+            // _buildCard(size, 'Factures', Icons.receipt, 89, 89, () =>Navigator.push(
+            //   context,
+            //   MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+            // )),
           ],
         ),
         SizedBox(height: size.height * 0.02),

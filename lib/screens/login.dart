@@ -3,6 +3,7 @@ import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/services/credential_service.dart'; // Update with your actual project name
 import 'dart:convert';
 import 'home_page.dart';
+import 'package:travail_fute/utils/logger.dart';
 // Added import for FilteringTextInputFormatter
 // import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,27 +65,35 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final user = responseData['user']; // Store the user instance
-      final deviceToken = responseData['device_token']; // Store the device token
-      
-      // Save user and device token in SharedPreferences
-      // final prefs = await SharedPreferences.getInstance();
-      // await prefs.setString('user', jsonEncode(user));
-      // await prefs.setString('device_token', deviceToken);
+      try {
+        final responseData = jsonDecode(response.body);
+        final user = responseData['user']; // Store the user instance
+        final deviceToken = responseData['device_token']; // Store the device token
+        
+        // Save user and device token in SharedPreferences
+        // final prefs = await SharedPreferences.getInstance();
+        // await prefs.setString('user', jsonEncode(user));
+        // await prefs.setString('device_token', deviceToken);
 
-      print('Login successful: $responseData');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(user: user, deviceToken: deviceToken)), // Inject user and device token into HomePage
-      );
+        logger.i('Login successful: $responseData');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage(user: user, deviceToken: deviceToken)), // Inject user and device token into HomePage
+        );
+      } catch (e) {
+        _showErrorDialog('Error parsing server response: ${e.toString()}');
+      }
     } else {
-      print(response);
-      final responseData = jsonDecode(response.body);
-      final errorMessage = responseData['non_field_errors'] != null
-          ? responseData['non_field_errors'].join(', ')
-          : 'Pin ou Numero de telephone incorrect';
-      _showErrorDialog(errorMessage); // Show error dialog
+      logger.i(response);
+      try {
+        final responseData = jsonDecode(response.body);
+        final errorMessage = responseData['non_field_errors'] != null
+            ? responseData['non_field_errors'].join(', ')
+            : 'Pin ou Numero de telephone incorrect';
+        _showErrorDialog(errorMessage); // Show error dialog
+      } catch (e) {
+        _showErrorDialog('Erreur réseau ou serveur indisponible. Veuillez vérifier votre connexion et réessayer.');
+      }
     }
   }
 

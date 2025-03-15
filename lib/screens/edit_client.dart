@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_detail.dart';
 import 'package:travail_fute/services/clients_service.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class EditClient extends StatefulWidget {
   const EditClient({super.key, required this.client});
@@ -112,7 +113,7 @@ class _EditClientState extends State<EditClient> {
                     };
 
                     try {
-                      print(updatedClient);
+                      logger.i(updatedClient);
                       
                       await ClientService().updateClient(context, widget.client['id'].toString(), updatedClient);
                         ScaffoldMessenger.of(context).showSnackBar(

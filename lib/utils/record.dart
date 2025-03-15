@@ -72,7 +72,7 @@ class Recording {
     // ];
     // Map<String, dynamic> response_message = await openAI.generateChatCompletion(messages);
     // Map<String, dynamic> notificationData = response_message["notification_data"];
-    // print("THE RESPONSE MESSAGE  $response_message");
+    // logger.i("THE RESPONSE MESSAGE  $response_message");
     // final outputFilePath = await openAI.getWritableFilePath('speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
     // await openAI.textToSpeech(response_message["user_response"], outputFilePath);
     audioPath = "";

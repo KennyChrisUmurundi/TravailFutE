@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart';
+import 'package:travail_fute/utils/logger.dart';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +13,6 @@ class RecordingService {
   String callNumber;
   final String callPath;
   BuildContext context;
-  final logger = Logger();
   RecordingService(
     BuildContext context,
     this.callNumber,
@@ -47,13 +46,13 @@ class RecordingService {
       // Add headers
       request.headers['Authorization'] = 'Token $deviceToken';
 
-      print("the request: $request");
+      logger.i("the request: $request");
 
       // Send the request
       final response = await request.send();
 
       if (response.statusCode == 201) {
-        print('Call recording uploaded successfully');
+        logger.i('Call recording uploaded successfully');
         return true;
       } else {
         logger.d(
@@ -61,7 +60,7 @@ class RecordingService {
         return false;
       }
     } catch (error) {
-      print('Error: $error');
+      logger.i('Error: $error');
       return false;
     }
   }

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:travail_fute/providers/message_provider.dart';
 import 'package:travail_fute/widgets/message_card.dart'; // Add this line to import MessageCard widget
 import 'package:travail_fute/screens/message_detail_screen.dart'; // Import MessageDetailScreen
-import 'package:logger/logger.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -15,7 +15,6 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  final logger = Logger();
   static const platform = MethodChannel('sms_channel');
 
   Future<void> fetchSms() async {
@@ -54,7 +53,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       body: Consumer<MessageProvider>(
         builder: (context, messageProvider, child) {
           final messages = messageProvider.messages;
-          print("First 5 messages: ${messages.take(5).toList()}");
+          logger.i("First 5 messages: ${messages.take(5).toList()}");
           final Map<String, List<Map<String, dynamic>>> groupedMessages = {};
           final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 

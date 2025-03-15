@@ -304,7 +304,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
     return FloatingActionButton(
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) =>  ClientsList(deviceToken: token)),
+        MaterialPageRoute(builder: (context) =>  ClientsList()),
       ),
       backgroundColor: kTravailFuteMainColor,
       elevation: 8,

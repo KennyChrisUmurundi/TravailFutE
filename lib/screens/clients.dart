@@ -1,32 +1,31 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
+import 'package:travail_fute/utils/logger.dart';
+import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_create.dart';
+import 'package:travail_fute/utils/provider.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
 
 class ClientsList extends StatefulWidget {
-  final String deviceToken;
-
-  const ClientsList({super.key, required this.deviceToken});
+  const ClientsList({super.key});
 
   @override
   State<ClientsList> createState() => _ClientsListState();
 }
 
 class _ClientsListState extends State<ClientsList> with SingleTickerProviderStateMixin {
-  final logger = Logger();
   List<dynamic> clientList = [];
   List<dynamic> filteredClientList = [];
-  String? nextUrl;
-  String? previousUrl;
   final ScrollController _scrollController = ScrollController();
   bool isLoading = false;
   String? errorMessage;
   final TextEditingController _searchController = TextEditingController();
   late AnimationController _controller;
   late Animation<double> _animation;
-  String _selectedFilter = 'last_name'; // Default filter
+  Timer? _debounce;
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -37,64 +36,70 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
     )..forward();
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     callClient();
-    _scrollController.addListener(_scrollListener);
-    _searchController.addListener(_filterClients);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && nextUrl != null) {
-      callClient(url: nextUrl);
-    } else if (_scrollController.position.pixels == _scrollController.position.minScrollExtent && previousUrl != null) {
-      callClient(url: previousUrl);
-    }
-  }
-
-  void callClient({String? url}) async {
+  void callClient() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
-    final client = ClientService();
+
+    var client = ClientService();
     try {
-      print("Making request to URL: ${url ?? 'default API URL'} with token: ${widget.deviceToken}");
-      final responseData = await client.getClientList(context, url: url);
-      print("Response Data: $responseData");
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      var responseData = await client.getClientList(context, token: token); // Pass token explicitly
+
       setState(() {
-        if (url == null) {
-          clientList = responseData['results'];
-        } else {
-          clientList.addAll(responseData['results']);
-        }
+        // Extract the data array from the response map
+        clientList = responseData; // Reset on initial load
         filteredClientList = List.from(clientList);
-        nextUrl = responseData['next'];
-        previousUrl = responseData['previous'];
-        print('Next URL: $nextUrl, Previous URL: $previousUrl');
       });
       logger.d('Client List: $clientList');
     } catch (e) {
-      logger.d('Error: $e');
-      setState(() => errorMessage = 'Failed to load data. Please try again.');
+      logger.d('Error in callClient: $e');
+      setState(() => errorMessage = 'Failed to load data: $e');
       _showErrorDialog();
     } finally {
       setState(() => isLoading = false);
     }
   }
 
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _filterClients();
+    });
+  }
+
   void _filterClients() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
-      filteredClientList = clientList.where((client) {
-        final fieldValue = (client[_selectedFilter]?.toString() ?? '').toLowerCase();
-        return fieldValue.contains(query);
-      }).toList();
+      _isSearching = query.isNotEmpty;
+      if (query.isEmpty) {
+        filteredClientList = List.from(clientList);
+      } else {
+        filteredClientList = clientList.where((client) {
+          final normalizedQuery = query.startsWith('0') ? query.substring(1) : query;
+          final lastName = (client['last_name']?.toString() ?? '').toLowerCase();
+          final address = (client['address_street']?.toString() ?? '').toLowerCase();
+          final postalCode = (client['postal_code']?.toString() ?? '').toLowerCase();
+          final rawPhoneNumber = (client['phone_number']?.toString() ?? '').toLowerCase();
+          final phoneNumber = rawPhoneNumber.replaceAll(RegExp(r'^\+32|\D'), '');
+          final firstName = (client['first_name']?.toString() ?? '').toLowerCase();
+          return address.contains(query) || lastName.contains(query) || postalCode.contains(query) || phoneNumber.contains(normalizedQuery) || firstName.contains(query);
+        }).toList();
+      }
+      logger.d('Filtered clients: ${filteredClientList.length} results');
     });
   }
 
@@ -198,31 +203,6 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
             ),
           ),
           SizedBox(width: width * 0.03),
-          // GestureDetector(
-          //   onTap: () => Navigator.push(
-          //     context,
-          //     MaterialPageRoute(
-          //       builder: (_) => ClientCreatePage(deviceToken: widget.deviceToken),
-          //     ),
-          //   ),
-          //   child: Container(
-          //     padding: EdgeInsets.all(width * 0.025),
-          //     decoration: BoxDecoration(
-          //       gradient: LinearGradient(
-          //         colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
-          //       ),
-          //       shape: BoxShape.circle,
-          //       boxShadow: [
-          //         BoxShadow(
-          //           color: kTravailFuteMainColor.withOpacity(0.4),
-          //           blurRadius: 8,
-          //           offset: const Offset(0, 4),
-          //         ),
-          //       ],
-          //     ),
-          //     child: Icon(Icons.add, color: Colors.white, size: width * 0.07),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -241,45 +221,24 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-            decoration: BoxDecoration(
-              color: kTravailFuteMainColor.withOpacity(0.1),
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(15)),
-            ),
-            child: DropdownButton<String>(
-              value: _selectedFilter,
-              icon: Icon(Icons.filter_list, color: kTravailFuteMainColor, size: width * 0.05),
-              underline: const SizedBox(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedFilter = value!;
-                  _filterClients();
-                });
-              },
-              items: [
-                DropdownMenuItem(value: 'last_name', child: Text('Nom', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'postal_code', child: Text('Code Postal', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                DropdownMenuItem(value: 'phone_number', child: Text('Telephone', style: TextStyle(fontSize: width * 0.04, color: kTravailFuteMainColor))),
-                
-              ],
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              onSubmitted: (_) => _filterClients(),
-              decoration: InputDecoration(
-                hintText: 'Recherche ...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: width * 0.04, horizontal: width * 0.03),
-              ),
-            ),
-          ),
-        ],
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Rechercher...',
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: width * 0.04, horizontal: width * 0.03),
+          prefixIcon: Icon(Icons.search, color: kTravailFuteMainColor),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey[600]),
+                  onPressed: () {
+                    _searchController.clear();
+                    _filterClients();
+                  },
+                )
+              : null,
+        ),
       ),
     );
   }
@@ -290,18 +249,8 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
         : ListView.builder(
             controller: _scrollController,
             padding: EdgeInsets.all(width * 0.03),
-            itemCount: filteredClientList.length + (nextUrl != null ? 1 : 0),
+            itemCount: filteredClientList.length,
             itemBuilder: (context, index) {
-              if (index == filteredClientList.length && nextUrl != null) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: width * 0.02),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(kTravailFuteMainColor),
-                    ),
-                  ),
-                );
-              }
               return FadeTransition(
                 opacity: _animation,
                 child: ClientCard(client: filteredClientList[index]),
@@ -324,7 +273,7 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
             ),
             SizedBox(height: size.height * 0.02),
             Text(
-                'Aucun client trouvé',
+              _isSearching ? 'Aucun résultat trouvé' : 'Aucun client trouvé',
               style: TextStyle(
                 fontSize: width * 0.05,
                 color: Colors.grey[600],
@@ -333,7 +282,9 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
             ),
             SizedBox(height: size.height * 0.01),
             Text(
-                'Ajoutez un nouveau client ou affinez votre recherche',
+              _isSearching
+                  ? 'Essayez une autre recherche'
+                  : 'Ajoutez un nouveau client ou affinez votre recherche',
               style: TextStyle(
                 fontSize: width * 0.04,
                 color: Colors.grey[500],
@@ -373,12 +324,13 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
 
   Widget _buildFAB(double width) {
     return FloatingActionButton(
-      onPressed: () => Navigator.push(
+      onPressed: () {
+        Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ClientCreatePage(deviceToken: widget.deviceToken),
+          builder: (_) => ClientCreatePage(),
         ),
-      ),
+      );},
       backgroundColor: kTravailFuteMainColor,
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

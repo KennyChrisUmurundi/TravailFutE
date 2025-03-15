@@ -1,5 +1,6 @@
 import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 // This Function is for the user to accept the phone state permission
 Future<bool> requestPermission() async {
@@ -35,6 +36,6 @@ void setStream(Function(PhoneState) callback) async {
       callback(event);
     });
   } else {
-    print("Permission not granted.");
+    logger.i("Permission not granted.");
   }
 }

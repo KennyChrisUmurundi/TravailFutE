@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/screens/clients.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/widgets/loading.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class ClientCreatePage extends StatefulWidget {
-  final String deviceToken;
-  const ClientCreatePage({super.key, required this.deviceToken});
+  const ClientCreatePage({super.key});
 
   @override
   State<ClientCreatePage> createState() => _ClientCreatePageState();
@@ -20,18 +21,28 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  // Validation states
   final Map<String, bool> _validationStates = {
-    'Telephone': false,
+    'Téléphone': false,
     'Rue': false,
     'Ville': false,
     'Code Postal': false,
     'Nom': false,
-    'Prenom': false,
+    'Prénom': false,
     'Email': false,
   };
 
-  bool get _isFormValid => _validationStates.values.every((isValid) => isValid);
+  final Map<String, String> _errorMessages = {
+    'Téléphone': '10 chiffres requis',
+    'Rue': 'Champ non rempli',
+    'Ville': 'Champ non rempli',
+    'Code Postal': '4 chiffres requis',
+    'Nom': 'Champ non rempli',
+    'Prénom': 'Champ non rempli',
+    'Email': 'Email invalide',
+  };
+
+  // Only Téléphone is mandatory
+  bool get _isFormValid => _validationStates['Téléphone']!;
 
   @override
   void initState() {
@@ -40,7 +51,10 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
       duration: const Duration(milliseconds: 800),
       vsync: this,
     )..forward();
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -52,13 +66,13 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
   void _validateField(String fieldName, String? value) {
     setState(() {
       switch (fieldName) {
-        case 'Telephone':
+        case 'Téléphone':
           _validationStates[fieldName] = (value?.length == 10);
           break;
         case 'Rue':
         case 'Ville':
         case 'Nom':
-        case 'Prenom':
+        case 'Prénom':
           _validationStates[fieldName] = (value?.isNotEmpty ?? false);
           break;
         case 'Code Postal':
@@ -75,11 +89,14 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
     if (_formKey.currentState!.saveAndValidate()) {
       setState(() => isLoading = true);
       try {
+        logger.i(_formKey.currentState!.value);
         await clientService.createClient(context, _formKey.currentState!.value);
         Navigator.pop(context);
+        Navigator.push(
+              context, MaterialPageRoute(builder: (_) => ClientsList()));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating client: $e')),
+          SnackBar(content: Text('Erreur lors de la création du client: $e')),
         );
       } finally {
         setState(() => isLoading = false);
@@ -95,9 +112,9 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [kTravailFuteMainColor.withOpacity(0.1), Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [kTravailFuteMainColor.withOpacity(0.2), Colors.white],
           ),
         ),
         child: SafeArea(
@@ -106,9 +123,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
               Column(
                 children: [
                   _buildHeader(size),
-                  Expanded(
-                    child: _buildForm(size),
-                  ),
+                  Expanded(child: _buildForm(size)),
                 ],
               ),
               if (isLoading) _buildLoadingOverlay(),
@@ -124,10 +139,14 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
     return Container(
       padding: EdgeInsets.all(size.width * 0.04),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black26,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -136,18 +155,25 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: kTravailFuteMainColor),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           Expanded(
             child: FadeTransition(
               opacity: _animation,
               child: Text(
-                'Create New Client',
+                'Nouveau Client',
                 style: TextStyle(
-                  fontSize: size.width * 0.05,
+                  fontSize: size.width * 0.06,
                   fontWeight: FontWeight.bold,
-                  color: kTravailFuteMainColor,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -159,71 +185,104 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
 
   Widget _buildForm(Size size) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(size.width * 0.05),
+      padding: EdgeInsets.all(size.width * 0.06),
       child: FadeTransition(
         opacity: _animation,
-        child: Card(
-          elevation: 8,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: EdgeInsets.all(size.width * 0.05),
-            child: FormBuilder(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ModernTextField(
-                    name: 'Nom',
-                    label: 'Last Name',
-                    icon: Icons.person,
-                    onChanged: (value) => _validateField('Nom', value),
-                  ),
-                  ModernTextField(
-                    name: 'Prenom',
-                    label: 'First Name',
-                    icon: Icons.person,
-                    onChanged: (value) => _validateField('Prenom', value),
-                  ),
-                  ModernTextField(
-                    name: 'Telephone',
-                    label: 'Phone',
-                    icon: Icons.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                    ],
-                    onChanged: (value) => _validateField('Telephone', value),
-                  ),
-                  ModernTextField(
-                    name: 'Email',
-                    label: 'Email',
-                    icon: Icons.email,
-                    onChanged: (value) => _validateField('Email', value),
-                  ),
-                  ModernTextField(
-                    name: 'Rue',
-                    label: 'Street',
-                    icon: Icons.location_on,
-                    onChanged: (value) => _validateField('Rue', value),
-                  ),
-                  ModernTextField(
-                    name: 'Ville',
-                    label: 'City',
-                    icon: Icons.location_city,
-                    onChanged: (value) => _validateField('Ville', value),
-                  ),
-                  ModernTextField(
-                    name: 'Code Postal',
-                    label: 'Postal Code',
-                    icon: Icons.local_post_office,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
-                    onChanged: (value) => _validateField('Code Postal', value),
-                  ),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white, Colors.grey[50]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 15,
+                offset: const Offset(0, 5),
               ),
+            ],
+            border: Border.all(color: Colors.grey[200]!, width: 1),
+          ),
+          padding: EdgeInsets.all(size.width * 0.06),
+          child: FormBuilder(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ModernTextField(
+                  name: 'first_name',
+                  label: 'Nom',
+                  icon: Icons.person,
+                  isValid: _validationStates['Nom']!,
+                  errorMessage: _errorMessages['Nom']!,
+                  animation: _animation,
+                  onChanged: (value) => _validateField('Nom', value),
+                ),
+                ModernTextField(
+                  name: 'last_name',
+                  label: 'Prénom',
+                  icon: Icons.person,
+                  isValid: _validationStates['Prénom']!,
+                  errorMessage: _errorMessages['Prénom']!,
+                  animation: _animation,
+                  onChanged: (value) => _validateField('Prénom', value),
+                ),
+                ModernTextField(
+                  name: 'phone_number',
+                  label: 'Téléphone *',
+                  icon: Icons.phone,
+                  isValid: _validationStates['Téléphone']!,
+                  errorMessage: _errorMessages['Téléphone']!,
+                  animation: _animation,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  onChanged: (value) => _validateField('Téléphone', value),
+                ),
+                ModernTextField(
+                  name: 'email',
+                  label: 'Email',
+                  icon: Icons.email,
+                  isValid: _validationStates['Email']!,
+                  errorMessage: _errorMessages['Email']!,
+                  animation: _animation,
+                  onChanged: (value) => _validateField('Email', value),
+                ),
+                ModernTextField(
+                  name: 'address_street',
+                  label: 'Rue',
+                  icon: Icons.location_on,
+                  isValid: _validationStates['Rue']!,
+                  errorMessage: _errorMessages['Rue']!,
+                  animation: _animation,
+                  onChanged: (value) => _validateField('Rue', value),
+                ),
+                ModernTextField(
+                  name: 'address_town',
+                  label: 'Ville',
+                  icon: Icons.location_city,
+                  isValid: _validationStates['Ville']!,
+                  errorMessage: _errorMessages['Ville']!,
+                  animation: _animation,
+                  onChanged: (value) => _validateField('Ville', value),
+                ),
+                ModernTextField(
+                  name: 'postal_code',
+                  label: 'Code Postal',
+                  icon: Icons.local_post_office,
+                  isValid: _validationStates['Code Postal']!,
+                  errorMessage: _errorMessages['Code Postal']!,
+                  animation: _animation,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                  onChanged: (value) => _validateField('Code Postal', value),
+                ),
+              ],
             ),
           ),
         ),
@@ -233,20 +292,46 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
 
   Widget _buildLoadingOverlay() {
     return Container(
-      color: Colors.black.withOpacity(0.3),
-      child: const Center(child: Loading()),
+      color: Colors.black.withOpacity(0.4),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Loading(),
+        ),
+      ),
     );
   }
 
   Widget _buildFAB() {
-    return FloatingActionButton(
-      onPressed: _isFormValid ? _submitForm : null,
-      backgroundColor: _isFormValid ? kTravailFuteMainColor : Colors.grey,
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: ScaleTransition(
-        scale: _animation,
-        child: const Icon(Icons.check, color: Colors.white, size: 30),
+    return Tooltip(
+      message: _isFormValid ? 'Créer le client' : 'Le numéro de téléphone est requis (10 chiffres)',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        child: FloatingActionButton(
+          onPressed: _isFormValid ? _submitForm : null,
+          backgroundColor: _isFormValid ? kTravailFuteMainColor : Colors.grey[400],
+          elevation: _isFormValid ? 10 : 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ScaleTransition(
+            scale: _animation,
+            child: Icon(
+              Icons.check,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -256,6 +341,9 @@ class ModernTextField extends StatelessWidget {
   final String name;
   final String label;
   final IconData icon;
+  final bool isValid;
+  final String errorMessage;
+  final Animation<double> animation;
   final ValueChanged<String?>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
 
@@ -264,6 +352,9 @@ class ModernTextField extends StatelessWidget {
     required this.name,
     required this.label,
     required this.icon,
+    required this.isValid,
+    required this.errorMessage,
+    required this.animation,
     this.onChanged,
     this.inputFormatters,
   });
@@ -273,36 +364,74 @@ class ModernTextField extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: size.height * 0.02),
-      child: FormBuilderTextField(
-        name: name,
-        onChanged: onChanged,
-        inputFormatters: inputFormatters,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[600]),
-          prefixIcon: Icon(icon, color: kTravailFuteMainColor),
-          filled: true,
-          fillColor: Colors.grey[100],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+      padding: EdgeInsets.only(bottom: size.height * 0.025),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormBuilderTextField(
+            name: name,
+            onChanged: onChanged,
+            inputFormatters: inputFormatters,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: Icon(icon, color: kTravailFuteMainColor, size: 22),
+              suffixIcon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: isValid
+                    ? Icon(Icons.check_circle, color: Colors.green, key: ValueKey('valid-$name'))
+                    : Icon(Icons.error_outline, color: Colors.red, key: ValueKey('invalid-$name')),
+              ),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(
+                  color: isValid ? Colors.green : Colors.grey[300]!,
+                  width: 1.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+            ),
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-        ),
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
+          if (!isValid)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 16),
+              child: FadeTransition(
+                opacity: animation,
+                child: Text(
+                  errorMessage,
+                  style: TextStyle(
+                    color: Colors.red[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

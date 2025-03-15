@@ -4,11 +4,14 @@ import 'package:travail_fute/screens/create_project_screen.dart';
 import 'package:travail_fute/screens/new_estimate_screen.dart';
 import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
+import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/services/project_service.dart';
+import 'package:travail_fute/services/receipt_service.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 import 'package:travail_fute/screens/edit_client.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class ClientDetail extends StatefulWidget {
   const ClientDetail({super.key, required this.client, this.phoneNumber});
@@ -26,6 +29,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   late Animation<double> _scaleAnimation;
   final ProjectService projectService = ProjectService();
   List<dynamic> projects = [];
+  List<dynamic> bills = [];
 
   @override
   void initState() {
@@ -46,6 +50,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
       });
     }
     fetchClientProjects();
+    fetchClientBills();
   }
 
   @override
@@ -60,9 +65,23 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
         projects = value;
       });
     }).catchError((error) {
-      print(error);
+      logger.e(error);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Échec du chargement des chantiers : $error'),
+        backgroundColor: Colors.red,
+      ));
+    });
+  }
+
+  fetchClientBills() async {
+    await ReceiptService().fetchReceiptsByClient(context, widget.client['id']).then((value) {
+      setState(() {
+        bills = value;
+      });
+    }).catchError((error) {
+      logger.e(error);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Échec du chargement des factures : $error'),
         backgroundColor: Colors.red,
       ));
     });
@@ -318,7 +337,14 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {},
+                  onPress: () {
+                    Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReceiptScreen(bills: bills),
+                    ),
+                  );
+                  },
                   label: 'Factures',
                   icon: Icons.receipt,
                   value: 0,
@@ -335,7 +361,6 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                 child: MainCard(
                   size,
                   onPress: () { 
-                    fetchClientProjects();
                     Navigator.push(
                     context,
                     MaterialPageRoute(

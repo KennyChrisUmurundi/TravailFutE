@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/screens/pdf_viewer_screen.dart';
 import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class NewInvoiceScreen extends StatefulWidget {
   final Map<String, dynamic> client;
@@ -150,7 +151,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
         },
         body: jsonEncode(payload),
       );
-      print("response is ${response.body}");
+      logger.i("response is ${response.body}");
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Invoice created successfully')),

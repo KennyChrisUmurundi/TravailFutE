@@ -7,7 +7,8 @@ import 'package:travail_fute/services/receipt_service.dart';
 // import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ReceiptScreen extends StatefulWidget {
-  const ReceiptScreen({super.key});
+  final List<dynamic>? bills;
+  const ReceiptScreen({super.key,this.bills});
 
   @override
   State<ReceiptScreen> createState() => _ReceiptScreenState();
@@ -28,7 +29,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
       vsync: this,
     )..forward();
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    fetchReceipts();
+    if (widget.bills != null) {
+      _receipts = widget.bills!.cast<Map<String, dynamic>>();
+      _isLoading = false;
+    } else {
+      fetchReceipts();
+    }
   }
 
   @override

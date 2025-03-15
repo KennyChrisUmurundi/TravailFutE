@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:travail_fute/utils/func.dart';
 import 'package:travail_fute/utils/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:travail_fute/utils/logger.dart';
 
 const String apiUrl = "https://tfte.azurewebsites.net/api/project";
 
@@ -20,11 +21,11 @@ class ProjectService{
         url,
         headers: {'Authorization': 'Token $token'},
       );
-      print("This is the resp ${response.body}");
+      logger.i("This is the resp ${response.body}");
       checkInvalidTokenOrUser(context, response);
       if (response.statusCode == 200) {
         projects = jsonDecode(response.body)['results'];
-        print("Projects: $projects");
+        logger.i("Projects: $projects");
         return projects;
       } else {
         throw Exception('Failed to load projects');
@@ -42,11 +43,11 @@ class ProjectService{
         url,
         headers: {'Authorization': 'Token $token'},
       );
-      print("This is the resp one${response.body}");
+      logger.i("This is the resp one${response.body}");
       checkInvalidTokenOrUser(context, response);
       if (response.statusCode == 200) {
         projects = jsonDecode(response.body);
-        print("Projects by client: $projects");
+        logger.i("Projects by client: $projects");
         return projects;
       } else {
         throw Exception('Failed to load projects by client');
@@ -71,7 +72,7 @@ class ProjectService{
       if (response.statusCode == 201) {
         return response;
       } else {
-        print("Screen response ${response.body}");
+        logger.i("Screen response ${response.body}");
         throw Exception('Failed to create project');
       }
     } catch (e) {
@@ -95,7 +96,7 @@ class ProjectService{
       if (response.statusCode == 200) {
         return response;
       } else {
-        print("Screen response ${response.body}");
+        logger.i("Screen response ${response.body}");
         throw Exception('Failed to update project');
       }
     } catch (e) {
@@ -104,7 +105,7 @@ class ProjectService{
   }
 
   Future<http.Response> addComment(BuildContext context, String projectId, String comment) async{
-    print("check project data $projectId");
+    logger.i("check project data $projectId");
 
     try {
       final url = Uri.parse("$apiUrl/project-comments/");
@@ -118,7 +119,7 @@ class ProjectService{
         body: jsonEncode({'content': comment,'project':projectId}),
       );
       if (kDebugMode) {
-        print("check ${response.body}");
+        logger.i("check ${response.body}");
       }
       return response;
     } catch (e) {
@@ -139,12 +140,12 @@ class ProjectService{
       final response = await http.Response.fromStream(streamedResponse);
 
       checkInvalidTokenOrUser(context, response);
-      print("Screen response ${response.body}");
+      logger.i("Screen response ${response.body}");
       if (response.statusCode == 201) {
         final responseBody = jsonDecode(response.body);
         return responseBody['image'];
       } else {
-        print("Screen response ${response.body}");
+        logger.i("Screen response ${response.body}");
         throw Exception('Failed to add image');
       }
     } catch (e) {

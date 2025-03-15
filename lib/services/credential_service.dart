@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 const String apiUrlLogin = "https://tfte.azurewebsites.net/api/credentials/login/";
 
@@ -36,13 +37,13 @@ class CredentialService {
 
       return response;
     } on SocketException catch (e) {
-      print('Network error: $e');
+      logger.i('Network error: $e');
       return http.Response('Network error: $e', 500);
     } on http.ClientException catch (e) {
-      print('Client error: $e');
+      logger.i('Client error: $e');
       return http.Response('Client error: $e', 400);
     } catch (e) {
-      print('Unexpected error: $e');
+      logger.i('Unexpected error: $e');
       return http.Response('Unexpected error: $e', 500);
     }
   }

@@ -10,6 +10,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'utils/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:travail_fute/utils/logger.dart';
 import 'package:travail_fute/utils/noti.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -55,7 +56,7 @@ Future<void> requestPermissions(FlutterLocalNotificationsPlugin flutterLocalNoti
   statuses.forEach((permission, status) {
     if (status.isDenied) {
       // Handle the case when the permission is denied
-      print('$permission is denied.');
+      logger.i('$permission is denied.');
     }
   });
 }
@@ -72,7 +73,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // fetchSms();
   }
 
   @override
@@ -109,15 +109,15 @@ class RootScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      appBar: AppBar(
-        title: SizedBox(
-          height: 30,
-          child: Image.asset('assets/images/splash.png'),
-        ),
-        shadowColor: Colors.white,
-        elevation: 0.3,
-        backgroundColor: Colors.white,
-      ),
+      // appBar: AppBar(
+      //   title: SizedBox(
+      //     height: 30,
+      //     child: Image.asset('assets/images/splash.png'),
+      //   ),
+      //   shadowColor: Colors.white,
+      //   elevation: 0.3,
+      //   backgroundColor: Colors.white,
+      // ),
       body: Consumer2<TokenProvider, UserProvider>(
         builder: (context, tokenProvider, userProvider, child) {
           if (tokenProvider.token.isEmpty || userProvider.user == null) {

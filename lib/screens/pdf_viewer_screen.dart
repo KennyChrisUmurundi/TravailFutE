@@ -7,6 +7,7 @@ import 'package:travail_fute/utils/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:travail_fute/utils/logger.dart';
 
 class PdfViewerScreen extends StatelessWidget {
   final String bill;
@@ -65,7 +66,7 @@ class PdfViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
-    print('PDF URL: $pdfUrl');
+    logger.i('PDF URL: $pdfUrl');
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +99,7 @@ class PdfViewerScreen extends StatelessWidget {
                   );
                 },
                 onDocumentLoaded: (details) {
-                  print('Document loaded');
+                  logger.i('Document loaded');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('PDF loaded successfully')),
                   );

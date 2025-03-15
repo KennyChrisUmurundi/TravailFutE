@@ -4,9 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/services/credential_service.dart';
+import 'package:travail_fute/services/notification_service.dart' as noti;
 import 'package:travail_fute/utils/provider.dart'; // Assuming TokenProvider is here
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class Assistant extends StatefulWidget {
   const Assistant({super.key});
@@ -35,6 +37,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
   // Cached Data
   List<Map<String, dynamic>> _availableClients = [];
   List<Map<String, dynamic>> _availableServices = [];
+  List<Map<String, dynamic>> _availableNotifications = [];
 
   // State for creation flow
   Map<String, dynamic>? _creationData;
@@ -67,6 +70,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
   Future<void> _fetchInitialData() async {
     await _fetchClients();
     await _fetchServices();
+    await fetchNotifications();
   }
 
   Future<void> _fetchClients() async {
@@ -131,6 +135,14 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
       _addMessage('Erreur : $e', false);
     }
   }
+Future<void> fetchNotifications() async {
+  final token = Provider.of<TokenProvider>(context, listen: false).token;
+  final response = await noti.NotificationService(deviceToken: token).fetchNotifications(context);
+  _availableNotifications = (response['results'] as List)
+      .map((item) => item as Map<String, dynamic>)
+      .toList();
+}
+  
 
   void _addMessage(String text, bool isUser) {
     setState(() {
@@ -155,6 +167,7 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
     Données actuelles :
     - Clients : {{clients}}
     - Services : {{services}}
+    - Notifications: {{notifications}}
 
     Historique de la conversation :
     {{history}}
@@ -162,13 +175,14 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
 
   String clientsJson = jsonEncode(_availableClients);
   String servicesJson = jsonEncode(_availableServices);
+  String notificationsJson = jsonEncode(_availableNotifications);
   String history = _messages.map((m) => '${m['isUser'] ? 'Utilisateur' : 'Assistant'} : ${m['text']}').join('\n');
 
-  String prompt = systemPrompt
+  String prompt = '${systemPrompt
       .replaceAll('{{clients}}', clientsJson)
       .replaceAll('{{services}}', servicesJson)
-      .replaceAll('{{history}}', history) +
-      '\nUtilisateur : $input\nAssistant : ';
+      .replaceAll('{{notifications}}', notificationsJson)
+      .replaceAll('{{history}}', history)}\nUtilisateur : $input\nAssistant : ';
 
   try {
     final response = await http.post(
@@ -756,7 +770,7 @@ class _SpeakDialogState extends State<_SpeakDialog> with SingleTickerProviderSta
             }
           }
         },
-        onError: (error) => print('Speech error: $error'),
+        onError: (error) => logger.i('Speech error: $error'),
       );
       if (!available) {
         _showError('Impossible d\'initialiser la reconnaissance vocale.');

@@ -1,9 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:logger/logger.dart';
+import 'package:travail_fute/utils/logger.dart';
 
 class AudioPlayerManager {
   final AudioPlayer player = AudioPlayer();
-  final logger = Logger();
 
   void play(String source, String audioPath) {
     final sourceFunctions = {
