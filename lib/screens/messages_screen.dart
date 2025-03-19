@@ -32,6 +32,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       final List<Map<String, String>> stringMessages = messages.map((message) {
         return message.map((key, value) => MapEntry(key, value.toString()));
       }).toList();
+      logger.i("The draft message: ${stringMessages.where((msg) => msg['type'] == 'draft').toList()}");
 
       messageProvider.setMessages(stringMessages);
     } on PlatformException catch (e) {
@@ -53,7 +54,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       body: Consumer<MessageProvider>(
         builder: (context, messageProvider, child) {
           final messages = messageProvider.messages;
-          logger.i("First 5 messages: ${messages.take(5).toList()}");
+          logger.i("First 5 messages: ${messages.toList()}");
           final Map<String, List<Map<String, dynamic>>> groupedMessages = {};
           final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 

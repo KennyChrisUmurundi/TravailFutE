@@ -76,6 +76,24 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        val draftCursor = contentResolver.query(Telephony.Sms.Draft.CONTENT_URI, null, null, null, Telephony.Sms.DEFAULT_SORT_ORDER)
+        draftCursor?.use {
+        val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
+        val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
+        val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
+
+        while (it.moveToNext()) {
+            val dateMillis = it.getLong(indexDate)
+            val sms = mapOf(
+                "address" to it.getString(indexAddress),
+                "body" to it.getString(indexBody),
+                "type" to "draft",
+                "date" to dateMillis
+            )
+            smsList.add(sms)
+        }
+    }
+
         // Sort by date in ascending order
         smsList.sortBy { it["date"] as Long }
 

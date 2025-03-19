@@ -26,11 +26,11 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
 
   // API Endpoints
   final Map<String, String> _apiEndpoints = {
-    'estimates': '$apiUrl/estimates/',
+    'estimates': '$apiUrl/invoice/estimates/',
     'clients': '$apiUrl/clients/',
     'services': '$apiUrl/invoice/services/',
     'bills': '$apiUrl/bills/',
-    'notifications': '$apiUrl/notifications/',
+    'notifications': '$apiUrl/notification/notifications/',
     'projects': '$apiUrl/project/projects/',
   };
 
@@ -82,16 +82,20 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body)['results'];
-        setState(() {
-          _availableClients = data.map((client) => {
-            'id': client['id'],
-            'phone_number': client['phone_number'],
-            'is_active': client['is_active'] ?? true, // Assuming an 'is_active' field
-          }).toList();
-        });
+        if (mounted) {
+          setState(() {
+            _availableClients = data.map((client) => {
+              'id': client['id'],
+              'phone_number': client['phone_number'],
+              'is_active': client['is_active'] ?? true, // Assuming an 'is_active' field
+            }).toList();
+          });
+        }
       }
     } catch (e) {
-      _addMessage('Erreur lors de la récupération des clients : $e', false);
+      if (mounted) {
+        _addMessage('Erreur lors de la récupération des clients : $e', false);
+      }
     }
   }
 
@@ -104,17 +108,21 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body)['results'];
-        setState(() {
-          _availableServices = data.map((service) => {
-            'id': service['id'],
-            'name': service['name'],
-            'description': service['description'],
-            'base_price': double.parse(service['base_price'].toString()),
-          }).toList();
-        });
+        if (mounted) {
+          setState(() {
+            _availableServices = data.map((service) => {
+              'id': service['id'],
+              'name': service['name'],
+              'description': service['description'],
+              'base_price': double.parse(service['base_price'].toString()),
+            }).toList();
+          });
+        }
       }
     } catch (e) {
-      _addMessage('Erreur lors de la récupération des services : $e', false);
+      if (mounted) {
+        _addMessage('Erreur lors de la récupération des services : $e', false);
+      }
     }
   }
 
@@ -127,37 +135,49 @@ class _AssistantState extends State<Assistant> with SingleTickerProviderStateMix
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        onSuccess(data is List ? data : data['results']);
+        if (mounted) {
+          onSuccess(data is List ? data : data['results']);
+        }
       } else {
-        _addMessage('Erreur lors de la récupération des données : ${response.reasonPhrase}', false);
+        if (mounted) {
+          _addMessage('Erreur lors de la récupération des données : ${response.reasonPhrase}', false);
+        }
       }
     } catch (e) {
-      _addMessage('Erreur : $e', false);
+      if (mounted) {
+        _addMessage('Erreur : $e', false);
+      }
     }
   }
-Future<void> fetchNotifications() async {
-  final token = Provider.of<TokenProvider>(context, listen: false).token;
-  final response = await noti.NotificationService(deviceToken: token).fetchNotifications(context);
-  _availableNotifications = (response['results'] as List)
-      .map((item) => item as Map<String, dynamic>)
-      .toList();
-}
-  
+
+  Future<void> fetchNotifications() async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+    final response = await noti.NotificationService(deviceToken: token).fetchNotifications(context);
+    if (mounted) {
+      setState(() {
+        _availableNotifications = (response['results'] as List)
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
+      });
+    }
+  }
 
   void _addMessage(String text, bool isUser) {
-    setState(() {
-      _messages.add({
-        'text': text,
-        'isUser': isUser,
-        'timestamp': DateTime.now(),
+    if (mounted) {
+      setState(() {
+        _messages.add({
+          'text': text,
+          'isUser': isUser,
+          'timestamp': DateTime.now(),
+        });
       });
-    });
+    }
   }
 
   Future<String> _getResponseFromOpenAI(String input) async {
     String _openAiApiKey = await CredentialService().getOpenAiKey();
     const String systemPrompt = '''
-    Vous êtes un assistant IA pour une application de gestion en français (devis, factures, clients, services, notifications, projets). Votre rôle est de :
+    Vous êtes un assistant IA pour TravailFuté une application de gestion en français (devis, factures, clients, services, notifications, projets). Votre rôle est de :
     - Répondre aux questions de l'utilisateur en utilisant les données fournies (clients, services) ou en demandant des clarifications.
     - Si l'utilisateur veut créer une entité, poser la première question du processus de création de manière naturelle (ex. "Super ! Quel est le numéro de téléphone du client ?" pour un client).
     - Les entités valides pour la création sont : clients, services, factures (bills), devis (estimates), notifications, projets. Si une entité demandée n’est pas dans cette liste, informer l'utilisateur de manière conviviale (ex. "Je ne peux pas créer cela. Essayez client, service, facture, devis, notification ou projet.").
@@ -173,60 +193,60 @@ Future<void> fetchNotifications() async {
     {{history}}
     ''';
 
-  String clientsJson = jsonEncode(_availableClients);
-  String servicesJson = jsonEncode(_availableServices);
-  String notificationsJson = jsonEncode(_availableNotifications);
-  String history = _messages.map((m) => '${m['isUser'] ? 'Utilisateur' : 'Assistant'} : ${m['text']}').join('\n');
+    String clientsJson = jsonEncode(_availableClients);
+    String servicesJson = jsonEncode(_availableServices);
+    String notificationsJson = jsonEncode(_availableNotifications);
+    String history = _messages.map((m) => '${m['isUser'] ? 'Utilisateur' : 'Assistant'} : ${m['text']}').join('\n');
 
-  String prompt = '${systemPrompt
-      .replaceAll('{{clients}}', clientsJson)
-      .replaceAll('{{services}}', servicesJson)
-      .replaceAll('{{notifications}}', notificationsJson)
-      .replaceAll('{{history}}', history)}\nUtilisateur : $input\nAssistant : ';
+    String prompt = '${systemPrompt
+        .replaceAll('{{clients}}', clientsJson)
+        .replaceAll('{{services}}', servicesJson)
+        .replaceAll('{{notifications}}', notificationsJson)
+        .replaceAll('{{history}}', history)}\nUtilisateur : $input\nAssistant : ';
 
-  try {
-    final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: {
-        'Authorization': 'Bearer $_openAiApiKey',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'model': 'gpt-3.5-turbo',
-        'messages': [
-          {'role': 'system', 'content': prompt},
-          {'role': 'user', 'content': input},
-        ],
-        'max_tokens': 200,
-        'temperature': 0.7,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        headers: {
+          'Authorization': 'Bearer $_openAiApiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': 'gpt-3.5-turbo',
+          'messages': [
+            {'role': 'system', 'content': prompt},
+            {'role': 'user', 'content': input},
+          ],
+          'max_tokens': 200,
+          'temperature': 0.7,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['choices'][0]['message']['content'].trim();
-    } else {
-      return 'Erreur OpenAI : ${response.reasonPhrase}';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['choices'][0]['message']['content'].trim();
+      } else {
+        return 'Erreur OpenAI : ${response.reasonPhrase}';
+      }
+    } catch (e) {
+      return 'Erreur lors de l’appel à OpenAI : $e';
     }
-  } catch (e) {
-    return 'Erreur lors de l’appel à OpenAI : $e';
   }
-}
 
   void _processInput(String input) async {
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  if (_creationStep != null) {
-    _processCreationStep(input.toLowerCase());
+    if (_creationStep != null) {
+      _processCreationStep(input.toLowerCase());
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    String response = await _getResponseFromOpenAI(input);
+    _addMessage(response, false);
+
     setState(() => _isLoading = false);
-    return;
   }
-
-  String response = await _getResponseFromOpenAI(input);
-  _addMessage(response, false);
-
-  setState(() => _isLoading = false);
-}
 
   void _startCreation(String entity) {
     _creationData = {
@@ -268,75 +288,75 @@ Future<void> fetchNotifications() async {
   }
 
   void _processCreationStep(String input) {
-  final lowerInput = input.toLowerCase();
+    final lowerInput = input.toLowerCase();
 
-  // If no creation step is set, infer it from OpenAI's response context
-  if (_creationStep == null) {
-    if (_messages.last['text'].contains('numéro de téléphone du client')) {
-      _creationData = {'entity': 'clients'};
-      _creationStep = 'client_phone';
-    } else if (_messages.last['text'].contains('nom du service')) {
-      _creationData = {'entity': 'services'};
-      _creationStep = 'service_name';
-    } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('facture')) {
-      _creationData = {'entity': 'bills', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
-      _creationStep = 'client';
-    } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('devis')) {
-      _creationData = {'entity': 'estimates', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
-      _creationStep = 'client';
-    } else if (_messages.last['text'].contains('message de la notification')) {
-      _creationData = {'entity': 'notifications'};
-      _creationStep = 'notification_message';
-    } else if (_messages.last['text'].contains('nom du projet')) {
-      _creationData = {'entity': 'projects'};
-      _creationStep = 'project_name';
+    // If no creation step is set, infer it from OpenAI's response context
+    if (_creationStep == null) {
+      if (_messages.last['text'].contains('numéro de téléphone du client')) {
+        _creationData = {'entity': 'clients'};
+        _creationStep = 'client_phone';
+      } else if (_messages.last['text'].contains('nom du service')) {
+        _creationData = {'entity': 'services'};
+        _creationStep = 'service_name';
+      } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('facture')) {
+        _creationData = {'entity': 'bills', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
+        _creationStep = 'client';
+      } else if (_messages.last['text'].contains('quel client') && _messages.last['text'].contains('devis')) {
+        _creationData = {'entity': 'estimates', 'client': null, 'items': [], 'description': 'Services rendus', 'vat_rate': 21.0, 'hourly_rate': null, 'hours_worked': null};
+        _creationStep = 'client';
+      } else if (_messages.last['text'].contains('message de la notification')) {
+        _creationData = {'entity': 'notifications'};
+        _creationStep = 'notification_message';
+      } else if (_messages.last['text'].contains('nom du projet')) {
+        _creationData = {'entity': 'projects'};
+        _creationStep = 'project_name';
+      }
+    }
+
+    // Proceed with the creation steps
+    switch (_creationStep) {
+      case 'client_phone':
+        _creationData!['phone_number'] = input.trim();
+        _creationStep = 'review';
+        _addMessage('Client avec numéro ${input.trim()}. Voulez-vous soumettre ceci ? (Oui/Non)', false);
+        break;
+
+      case 'service_name':
+        _creationData!['name'] = input;
+        _creationStep = 'service_description';
+        _addMessage('Nom du service : $input. Quelle est la description ?', false);
+        break;
+      case 'service_description':
+        _creationData!['description'] = input;
+        _creationStep = 'service_price';
+        _addMessage('Description : $input. Quel est le prix de base ? (ex. 100)', false);
+        break;
+      case 'service_price':
+        if (double.tryParse(input) != null && double.parse(input) >= 0) {
+          _creationData!['base_price'] = double.parse(input);
+          _creationStep = 'review';
+          _addMessage('Service : ${_creationData!['name']}, Description : ${_creationData!['description']}, Prix : ${_creationData!['base_price']} €. Voulez-vous soumettre ceci ? (Oui/Non)', false);
+        } else {
+          _addMessage('Veuillez entrer un prix valide (ex. 100).', false);
+        }
+        break;
+
+      case 'client':
+        final client = _availableClients.firstWhere(
+          (c) => c['phone_number'].toString().contains(input.trim()),
+          orElse: () => {},
+        );
+        if (client.isNotEmpty) {
+          _creationData!['client'] = client;
+          _creationStep = 'services';
+          _addMessage('Parfait, client ${client['phone_number']}. Quels services voulez-vous inclure ? (Dites "liste des services" pour voir les options)', false);
+        } else {
+          _addMessage('Client non trouvé. Veuillez fournir un numéro parmi : ${_availableClients.map((c) => c['phone_number']).join(', ')}', false);
+        }
+        break;
+      // ... (rest of the cases remain unchanged)
     }
   }
-
-  // Proceed with the creation steps
-  switch (_creationStep) {
-    case 'client_phone':
-      _creationData!['phone_number'] = input.trim();
-      _creationStep = 'review';
-      _addMessage('Client avec numéro ${input.trim()}. Voulez-vous soumettre ceci ? (Oui/Non)', false);
-      break;
-
-    case 'service_name':
-      _creationData!['name'] = input;
-      _creationStep = 'service_description';
-      _addMessage('Nom du service : $input. Quelle est la description ?', false);
-      break;
-    case 'service_description':
-      _creationData!['description'] = input;
-      _creationStep = 'service_price';
-      _addMessage('Description : $input. Quel est le prix de base ? (ex. 100)', false);
-      break;
-    case 'service_price':
-      if (double.tryParse(input) != null && double.parse(input) >= 0) {
-        _creationData!['base_price'] = double.parse(input);
-        _creationStep = 'review';
-        _addMessage('Service : ${_creationData!['name']}, Description : ${_creationData!['description']}, Prix : ${_creationData!['base_price']} €. Voulez-vous soumettre ceci ? (Oui/Non)', false);
-      } else {
-        _addMessage('Veuillez entrer un prix valide (ex. 100).', false);
-      }
-      break;
-
-    case 'client':
-      final client = _availableClients.firstWhere(
-        (c) => c['phone_number'].toString().contains(input.trim()),
-        orElse: () => {},
-      );
-      if (client.isNotEmpty) {
-        _creationData!['client'] = client;
-        _creationStep = 'services';
-        _addMessage('Parfait, client ${client['phone_number']}. Quels services voulez-vous inclure ? (Dites "liste des services" pour voir les options)', false);
-      } else {
-        _addMessage('Client non trouvé. Veuillez fournir un numéro parmi : ${_availableClients.map((c) => c['phone_number']).join(', ')}', false);
-      }
-      break;
-    // ... (rest of the cases remain unchanged)
-  }
-}
 
   void _showCreationReview() {
     final entity = _creationData!['entity'];

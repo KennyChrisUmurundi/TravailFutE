@@ -6,6 +6,7 @@ import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/services/clients_service.dart';
+import 'package:travail_fute/services/invoice_service.dart';
 import 'package:travail_fute/services/project_service.dart';
 import 'package:travail_fute/services/receipt_service.dart';
 import 'package:travail_fute/widgets/main_card.dart';
@@ -30,6 +31,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   final ProjectService projectService = ProjectService();
   List<dynamic> projects = [];
   List<dynamic> bills = [];
+  List<dynamic> estimates = [];
 
   @override
   void initState() {
@@ -44,13 +46,16 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
     );
     if (widget.phoneNumber != null) {
       clientService.getClientByPhone(context, widget.phoneNumber!).then((client) {
-        setState(() {
-          widget.client.addAll(client);
-        });
+        if (mounted) {
+          setState(() {
+            widget.client.addAll(client);
+          });
+        }
       });
     }
     fetchClientProjects();
     fetchClientBills();
+    fetchClientInvoices();
   }
 
   @override
@@ -60,31 +65,60 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   }
 
   fetchClientProjects() async {
-    await projectService.fetchProjectsByClient(context, widget.client['id']).then((value) {
-      setState(() {
-        projects = value;
-      });
-    }).catchError((error) {
+    try {
+      final value = await projectService.fetchProjectsByClient(context, widget.client['id']);
+      if (mounted) {
+        setState(() {
+          projects = value;
+        });
+      }
+    } catch (error) {
       logger.e(error);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Échec du chargement des chantiers : $error'),
-        backgroundColor: Colors.red,
-      ));
-    });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Échec du chargement des chantiers : $error'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
   }
 
   fetchClientBills() async {
-    await ReceiptService().fetchReceiptsByClient(context, widget.client['id']).then((value) {
-      setState(() {
-        bills = value;
-      });
-    }).catchError((error) {
+    try {
+      final value = await ReceiptService().fetchReceiptsByClient(context, widget.client['id']);
+      if (mounted) {
+        setState(() {
+          bills = value;
+        });
+      }
+    } catch (error) {
       logger.e(error);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Échec du chargement des factures : $error'),
-        backgroundColor: Colors.red,
-      ));
-    });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Échec du chargement des factures : $error'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+
+  fetchClientInvoices() async {
+    try {
+      final value = await InvoiceService().fetchEstimatesByClient(context, id:widget.client['id'].toString());
+      if (mounted) {
+        setState(() {
+          estimates = value;
+        });
+      }
+    } catch (error) {
+      logger.e(error);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Échec du chargement des devis : $error'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
   }
 
   @override
@@ -325,7 +359,14 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {},
+                  onPress: () {
+                    Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReceiptScreen(bills: estimates,isEstimate: true),
+                    ),
+                  );
+                  },
                   label: 'Devis',
                   icon: Icons.euro,
                   value: 0,

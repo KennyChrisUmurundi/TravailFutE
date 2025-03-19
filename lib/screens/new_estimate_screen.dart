@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'package:travail_fute/utils/logger.dart';
 import 'package:travail_fute/utils/provider.dart';
 
 class NewEstimateScreen extends StatefulWidget {
@@ -29,7 +30,10 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
   bool _isLoadingServices = true;
 
   double get _servicesSubTotal => _estimateItems.fold(0.0, (sum, item) {
-        final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
+        final service = _availableServices.firstWhere(
+          (s) => s['id'] == item['service'],
+          orElse: () => {'base_price': 0.0},
+        );
         return sum + (service['base_price'] as double) * (item['quantity'] as int);
       });
   double get _hourlySubTotal => (_hourlyRateController.text.isNotEmpty && _hoursWorkedController.text.isNotEmpty)
@@ -93,7 +97,7 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
     try {
       final token = Provider.of<TokenProvider>(context, listen: false).token;
       final response = await http.post(
-        Uri.parse('$apiUrl/services/'),
+        Uri.parse('$apiUrl/invoice/services/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -124,7 +128,7 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
   Future<void> _submitEstimate() async {
     if (_estimateItems.isEmpty || _hourlyRateController.text.isEmpty || _hoursWorkedController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill all required fields')),
+        SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
       );
       return;
     }
@@ -132,13 +136,14 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
     final payload = {
       'client': widget.client['id'],
       'expiration_date': DateTime.now().add(Duration(days: 30)).toIso8601String().split('T')[0], // Added expiration
-      'description': _descriptionController.text.isEmpty ? 'Estimate for services' : _descriptionController.text,
+      'description': _descriptionController.text.isEmpty ? 'Devis pour services' : _descriptionController.text,
       'vat_rate': _vatRate * 100,
       'hourly_rate': double.parse(_hourlyRateController.text),
       'hours_worked': double.parse(_hoursWorkedController.text),
-      'estimate_items': _estimateItems, // Changed key to reflect estimate
-      'status': 'draft', // Optional: Add status for estimate workflow
+      'items': _estimateItems, // Changed key to reflect estimate
+      'status': 'sent', // Optional: Add status for estimate workflow
     };
+    logger.i('Estimate payload: ${jsonEncode(payload)}');
 
     try {
       final token = Provider.of<TokenProvider>(context, listen: false).token;
@@ -150,6 +155,7 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
         },
         body: jsonEncode(payload),
       );
+      logger.i("the response is ${response.body}");
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Estimate created successfully')),
@@ -288,7 +294,9 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
             decoration: InputDecoration(
-              labelText: 'Taux horaire (€)',
+                labelText: 'Taux Horaire',
+                labelStyle: TextStyle(fontSize: 13),
+                contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
               prefixIcon: Icon(Icons.euro, color: kTravailFuteMainColor),
               filled: true,
               fillColor: Colors.grey[100],
@@ -305,6 +313,7 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
             decoration: InputDecoration(
               labelText: 'Heures estimées',
+              labelStyle: TextStyle(fontSize: 10),
               prefixIcon: Icon(Icons.timer, color: kTravailFuteMainColor),
               filled: true,
               fillColor: Colors.grey[100],
@@ -334,11 +343,14 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
     return _estimateItems.isEmpty
         ? _buildEmptyState(size)
         : ListView.builder(
-            padding: EdgeInsets.all(size.width * 0.04),
             itemCount: _estimateItems.length,
+            padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
             itemBuilder: (context, index) {
               final item = _estimateItems[index];
-              final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
+              final service = _availableServices.firstWhere(
+                (s) => s['id'] == item['service'],
+                orElse: () => {'id': -1, 'name': 'Unknown Service', 'description': '', 'base_price': 0.0},
+              );
               return FadeTransition(
                 opacity: _animation,
                 child: _buildServiceCard(size, service, item['quantity'], index),

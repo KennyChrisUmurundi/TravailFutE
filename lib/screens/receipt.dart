@@ -8,7 +8,8 @@ import 'package:travail_fute/services/receipt_service.dart';
 
 class ReceiptScreen extends StatefulWidget {
   final List<dynamic>? bills;
-  const ReceiptScreen({super.key,this.bills});
+  final bool isEstimate;
+  const ReceiptScreen({super.key,this.bills,this.isEstimate = false});
 
   @override
   State<ReceiptScreen> createState() => _ReceiptScreenState();
@@ -110,8 +111,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
           Expanded(
             child: FadeTransition(
               opacity: _animation,
-              child: Text(
-                'Factures',
+                child: Text(
+                widget.isEstimate ? 'Devis' : 'Factures',
                 style: TextStyle(
                   fontSize: size.width * 0.05,
                   fontWeight: FontWeight.bold,
@@ -136,74 +137,136 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
   }
 
   Widget _buildReceiptList(Size size) {
+    if (_receipts.isEmpty) {
+      return _buildEmptyState(size, size.width);
+    }
+    
     return ListView.builder(
       padding: EdgeInsets.all(size.width * 0.04),
       itemCount: _receipts.length,
       itemBuilder: (context, index) {
-        final receipt = _receipts[index];
-        return FadeTransition(
-          opacity: _animation,
-          child: _buildReceiptCard(size, receipt),
-        );
+      final receipt = _receipts[index];
+      return FadeTransition(
+        opacity: _animation,
+        child: _buildReceiptCard(size, receipt),
+      );
       },
     );
   }
 
   Widget _buildReceiptCard(Size size, Map<String, dynamic> receipt) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: EdgeInsets.symmetric(vertical: size.height * 0.01),
-      child: Padding(
-        padding: EdgeInsets.all(size.width * 0.03),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Facture #${receipt['id']}',
-                    style: TextStyle(
-                      fontSize: size.width * 0.045,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PdfViewerScreen(billOrEstimateId: receipt['id'].toString(), isEstimate: widget.isEstimate),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        margin: EdgeInsets.symmetric(vertical: size.height * 0.01),
+        child: Padding(
+          padding: EdgeInsets.all(size.width * 0.03),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                     widget.isEstimate ? 'Devis #${receipt['id']}' : 'Facture #${receipt['id']}',
+                      style: TextStyle(
+                        fontSize: size.width * 0.045,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: size.height * 0.005),
-                  Text(
-                    'Client: ${receipt['client']}',
-                    style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
-                  ),
-                  Text(
-                    'Date: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(receipt['created_at']))}',
-                    style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
-                  ),
-                  Text(
-                    'Total: €${receipt['amount']}',
-                    style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
-                  ),
-                ],
+                    SizedBox(height: size.height * 0.005),
+                    Text(
+                      'Client: ${receipt['client']}',
+                      style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
+                    ),
+                    Text(
+                      'Date: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(receipt['created_at']))}',
+                      style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
+                    ),
+                    if (!widget.isEstimate)
+                      Text(
+                      'Total: €${receipt['amount']}',
+                      style: TextStyle(fontSize: size.width * 0.04, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.visibility, color: kTravailFuteMainColor),
-              onPressed: () async {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PdfViewerScreen(bill: receipt['id'].toString())
-                      ,
-                    ),
-                  );
-              },
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.visibility, color: kTravailFuteMainColor),
+                onPressed: () async {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PdfViewerScreen(billOrEstimateId: receipt['id'].toString(),isEstimate: widget.isEstimate)
+                        ,
+                      ),
+                    );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-
+Widget _buildEmptyState(Size size, double width) {
+    return Center(
+      child: ScaleTransition(
+        scale: _animation,
+        child: Container(
+          padding: EdgeInsets.all(width * 0.06),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.construction,
+                size: width * 0.15,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: width * 0.04),
+              Text(
+                widget.isEstimate? 'Aucun devis trouvé': 'Aucune facture trouvée' ,
+                style: TextStyle(
+                  fontSize: width * 0.05,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: width * 0.02),
+              Text(
+                widget.isEstimate? 'Ajoutez un nouveau devis pour commencer':'Ajoutez une nouvelle facture pour commencer !',
+                style: TextStyle(
+                  fontSize: width * 0.04,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   Widget _buildFAB() {
     return FloatingActionButton(
       onPressed: _navigateToNewInvoice,

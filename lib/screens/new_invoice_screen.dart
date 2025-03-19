@@ -95,7 +95,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
     try {
       final token = Provider.of<TokenProvider>(context, listen: false).token;
       final response = await http.post(
-        Uri.parse('$apiUrl/services/'),
+        Uri.parse('$apiUrl/invoice/services/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
         Navigator.pop(context);
         Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => PdfViewerScreen(bill: responseData["id"].toString())),
+              MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(),isEstimate: false)),
             );
       } else {
         throw Exception('Failed to create invoice: ${response.reasonPhrase}');

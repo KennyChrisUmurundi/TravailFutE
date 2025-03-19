@@ -113,8 +113,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       //   onMenuPressed: () {},
       //   backgroundColor: Colors.white.withOpacity(0.95),
       // ),
-      floatingActionButton: _buildFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // floatingActionButton: _buildFAB(),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 

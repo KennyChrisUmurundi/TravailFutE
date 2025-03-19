@@ -10,10 +10,17 @@ import 'dart:io';
 import 'package:travail_fute/utils/logger.dart';
 
 class PdfViewerScreen extends StatelessWidget {
-  final String bill;
+  final String billOrEstimateId; // Renamed to be more generic
   final String pdfUrl;
+  final bool isEstimate;
 
-  PdfViewerScreen({required this.bill, super.key}) : pdfUrl = "$apiUrl/bill/$bill/pdf/";
+  PdfViewerScreen({
+    required this.billOrEstimateId,
+    required this.isEstimate,
+    super.key,
+  }) : pdfUrl = isEstimate
+            ? "$apiUrl/invoice/$billOrEstimateId/pdf/"
+            : "$apiUrl/bill/$billOrEstimateId/pdf/";
 
   Future<bool> _checkPdfUrl(BuildContext context, String url, String token) async {
     try {
@@ -41,7 +48,7 @@ class PdfViewerScreen extends StatelessWidget {
 
       // Get temporary directory
       final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/bill_$bill.pdf';
+      final filePath = '${tempDir.path}/${isEstimate ? 'estimate' : 'bill'}_$billOrEstimateId.pdf';
 
       // Write PDF to file
       final file = File(filePath);
@@ -50,8 +57,12 @@ class PdfViewerScreen extends StatelessWidget {
       // Share the PDF with pre-filled options
       await Share.shareXFiles(
         [XFile(filePath, mimeType: 'application/pdf')],
-        text: 'Bonjour, voici la facture #$bill. Merci de vérifier et de procéder au paiement.',
-        subject: 'Facture #$bill - Votre Entreprise', // For email
+        text: isEstimate
+            ? 'Bonjour, voici le devis #$billOrEstimateId. Merci de vérifier.'
+            : 'Bonjour, voici la facture #$billOrEstimateId. Merci de vérifier et de procéder au paiement.',
+        subject: isEstimate
+            ? 'Devis #$billOrEstimateId - Votre Entreprise'
+            : 'Facture #$billOrEstimateId - Votre Entreprise', // For email
       );
 
       // Clean up the file after sharing
@@ -70,13 +81,13 @@ class PdfViewerScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Facture PDF'),
+        title: Text(isEstimate ? 'Devis PDF' : 'Facture PDF'),
         backgroundColor: kTravailFuteMainColor,
         actions: [
           IconButton(
             icon: Icon(Icons.share),
             onPressed: () => _sharePdf(context, pdfUrl, token),
-            tooltip: 'Envoyer la facture',
+            tooltip: isEstimate ? 'Envoyer le devis' : 'Envoyer la facture',
           ),
         ],
       ),
