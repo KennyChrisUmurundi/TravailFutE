@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart' as dt_picker;
+import 'package:travail_fute/screens/project_detail_screen.dart';
 import 'package:travail_fute/services/project_service.dart';
 
 class CreateProjectScreen extends StatefulWidget {
@@ -87,6 +88,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chantier créé avec succès')),
       );
+      Navigator.pop(context, true);
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

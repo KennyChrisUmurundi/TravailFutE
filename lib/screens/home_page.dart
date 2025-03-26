@@ -11,7 +11,7 @@ import 'package:travail_fute/screens/profile_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
-import 'package:flutter_sms_manager/flutter_sms_manager.dart';
+// import 'package:flutter_sms_manager/flutter_sms_manager.dart';
 import 'package:travail_fute/utils/logger.dart';
 import 'clients.dart';
 
@@ -36,8 +36,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   
   PhoneState status = PhoneState.nothing();
   late PhoneStateService phoneStateService;
-  final _smsListenerPlugin = Smswatcher();
-  List<Map<String, dynamic>> _smsList = [];
+  // final _smsListenerPlugin = Smswatcher();
+  // List<Map<String, dynamic>> _smsList = [];
   bool _isLoading = false;
 
   @override
@@ -52,20 +52,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     waitPermission();
     phoneStateService = PhoneStateService(context);
     phoneStateService.startListening();
-    _fetchSms();
+    // _fetchSms();
   }
 
-  Future<void> _fetchSms() async {
-    setState(() => _isLoading = true);
-    try {
-      final smsList = await SmsManager.fetchSms();
-      setState(() => _smsList = smsList);
-    } catch (e) {
-      logger.i('Error fetching SMS: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+  // Future<void> _fetchSms() async {
+  //   setState(() => _isLoading = true);
+  //   try {
+  //     final smsList = await SmsManager.fetchSms();
+  //     setState(() => _smsList = smsList);
+  //   } catch (e) {
+  //     logger.i('Error fetching SMS: $e');
+  //   } finally {
+  //     setState(() => _isLoading = false);
+  //   }
+  // }
 
   @override
   void dispose() {

@@ -159,9 +159,9 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
         final responseData = jsonDecode(response.body);
         Navigator.pop(context);
         Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(),isEstimate: false)),
-            );
+          context,
+          MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(),isEstimate: false)),
+        );
       } else {
         throw Exception('Failed to create invoice: ${response.reasonPhrase}');
       }

@@ -32,6 +32,9 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   List<dynamic> projects = [];
   List<dynamic> bills = [];
   List<dynamic> estimates = [];
+  bool isBillsLoading = false;
+  bool isProjectsLoading = false;
+  bool isEstimatesLoading = false;
 
   @override
   void initState() {
@@ -53,8 +56,11 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
         }
       });
     }
+    isBillsLoading = false;
+    isProjectsLoading = false;
+    isEstimatesLoading = false;
     fetchClientProjects();
-    fetchClientBills();
+    // fetchClientBills();
     fetchClientInvoices();
   }
 
@@ -125,6 +131,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final width = size.width;
+    
 
     return Scaffold(
       body: Container(
@@ -359,38 +366,69 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReceiptScreen(bills: estimates,isEstimate: true),
-                    ),
-                  );
+                  onPress: () async{
+                    setState(() {
+                      isEstimatesLoading = true;
+                    });
+                    try {
+                      await fetchClientInvoices();
+                      if (!mounted) return; 
+                      if (mounted) setState(() => isBillsLoading = false);
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReceiptScreen(bills: estimates,isEstimate: true),
+                      ),
+                    );
+                      } finally {
+                        setState(() {
+                            isEstimatesLoading = false;
+                          });
+                      }
                   },
                   label: 'Devis',
                   icon: Icons.euro,
                   value: 0,
                   completed: 2,
                   cardColor: kWhiteColor,
+                  isLoading: isEstimatesLoading,
                 ),
               ),
               SizedBox(width: width * 0.03),
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReceiptScreen(bills: bills),
-                    ),
-                  );
+                  onPress: () async {
+                    setState(() => isBillsLoading = true);
+                    try {
+                      await fetchClientBills();
+                      if (!mounted) return;
+                     if (mounted) setState(() => isBillsLoading = false);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReceiptScreen(bills: bills,isEstimate: false),
+                        ),
+                      );
+                  }
+                  catch (error) {
+                    logger.e(error);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Échec du chargement des factures : $error'),
+                        backgroundColor: Colors.red,
+                      ));
+                  };
+                  } finally {
+                    if (mounted) setState(() => isBillsLoading = false);
+                  }
                   },
                   label: 'Factures',
                   icon: Icons.receipt,
                   value: 0,
                   completed:2,
                   cardColor: kWhiteColor,
+                  isLoading: isBillsLoading,
                 ),
               ),
             ],
@@ -401,19 +439,26 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () { 
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProjectScreen(projects: projects),
-                    ),
-                  );
+                  onPress: () async {
+                    setState(() => isProjectsLoading = true);
+                    try {
+                      await fetchClientProjects();
+                      if (!mounted) return;
+                      if (mounted) setState(() => isBillsLoading = false);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ProjectScreen(projects: projects)),
+                      );
+                    } finally {
+                      if (mounted) setState(() => isProjectsLoading = false);
+                    }
                   },
                   label: 'Chantiers',
                   icon: Icons.build,
                   value: 89,
                   completed: 89,
                   cardColor: kWhiteColor,
+                  isLoading: isProjectsLoading,
                 ),
               ),
               SizedBox(width: width * 0.03),

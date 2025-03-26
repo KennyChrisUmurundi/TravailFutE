@@ -40,6 +40,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       logger.e("Failed to get SMS: '${e.message}'.");
     }
   }
+  
   @override
   void initState() {
     fetchSms();
@@ -90,7 +91,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
             itemBuilder: (context, index) {
               final sender = sortedSenders[index];
               final messagesFromSender = groupedMessages[sender]!;
-
+              logger.i("Messages from $sender: $messagesFromSender");
+              
               // Get the latest message
               final latestMessage = messagesFromSender.first;
 

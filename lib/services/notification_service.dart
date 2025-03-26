@@ -14,7 +14,7 @@ class NotificationService {
   NotificationService({ required this.deviceToken});
 
   Future<void> sendNotification(String title, String message, {String? dueDate, String? dueTime}) async {
-    final url = Uri.parse('$apiUrl/notification/');
+    final url = Uri.parse('$apiUrl/notification/manage/');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Token $deviceToken',
@@ -37,7 +37,7 @@ class NotificationService {
   }
 
   Future<Map<String, dynamic>> fetchNotifications(BuildContext context) async {
-  final url = Uri.parse('$apiUrl/notification');
+  final url = Uri.parse('$apiUrl/notification/manage/');
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Token $deviceToken',
@@ -72,7 +72,7 @@ class NotificationService {
       
 
   Future<Map<String, dynamic>> deleteNotification(String id) async {
-    final url = Uri.parse('$apiUrl/notification/$id/');
+    final url = Uri.parse('$apiUrl/notification/manage/$id/');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Token $deviceToken',
