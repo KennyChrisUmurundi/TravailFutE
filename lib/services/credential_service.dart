@@ -63,6 +63,23 @@ class CredentialService {
       throw Exception('Failed to load OpenAI key');
     }
   }
+  Future<http.Response> register(BuildContext context, String username, String phoneNumber, String pin) async {
+  try {
+    final response = await http.post(
+      Uri.parse('https://tfte.azurewebsites.net/api/credentials/register/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'phone_number': phoneNumber,
+        'pin': pin,
+        'pin2': pin,
+      }),
+    );
+    return response;
+  } catch (e) {
+    throw Exception('Network error: $e');
+  }
+}
 
   Future<void> logout(BuildContext context) async {
     globalDeviceToken = '';

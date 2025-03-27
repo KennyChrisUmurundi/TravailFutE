@@ -98,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
 
                       // Email
                       Text(
-                        user['email'],
+                        user['email'] ?? 'No email provided',
                         style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
 
@@ -107,9 +107,9 @@ class ProfileScreen extends StatelessWidget {
 
                       // Profile Info
                       _buildProfileInfo(Icons.person, "Nom d'utilisateur", user['username']),
-                      _buildProfileInfo(Icons.email, "Adresse email", user['email']),
-                      _buildProfileInfo(Icons.phone, "Numéro de téléphone", user['phone_number'] ?? "Non disponible"),
-                      _buildProfileInfo(Icons.email, "Localisation", user['email'] ?? "Non spécifié"),
+                      _buildProfileInfo(Icons.email, "Adresse email", user['email']?? "Non spécifié"),
+                      // _buildProfileInfo(Icons.phone, "Numéro de téléphone", user['phone_number'] ?? "Non disponible"),
+                      // _buildProfileInfo(Icons.email, "Localisation", user['email'] ?? "Non spécifié"),
 
                       const Spacer(),
 

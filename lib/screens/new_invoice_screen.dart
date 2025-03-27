@@ -29,9 +29,13 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
   final TextEditingController _hoursWorkedController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   bool _isLoadingServices = true;
+  bool _isSubmiting = false;
 
   double get _servicesSubTotal => _billItems.fold(0.0, (sum, item) {
-        final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
+        final service = _availableServices.firstWhere(
+          (s) => s['id'] == item['service'],
+          orElse: () => {'id': item['service'], 'name': 'Unknown', 'description': '', 'base_price': 0.0},
+        );
         return sum + (service['base_price'] as double) * (item['quantity'] as int);
       });
   double get _hourlySubTotal => (_hourlyRateController.text.isNotEmpty && _hoursWorkedController.text.isNotEmpty)
@@ -111,7 +115,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Service created successfully')),
         );
-        return data['id']; // Return the new service ID
+        return data['id'];
       } else {
         throw Exception('Failed to create service: ${response.reasonPhrase}');
       }
@@ -124,20 +128,22 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
   }
 
   Future<void> _submitInvoice() async {
-    if (_billItems.isEmpty || _hourlyRateController.text.isEmpty || _hoursWorkedController.text.isEmpty) {
+    setState(() => _isSubmiting = true);
+    if (_billItems.isEmpty && (_hourlyRateController.text.isEmpty || _hoursWorkedController.text.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill all required fields')),
+        SnackBar(content: Text('Please add at least one service or fill hourly rate and hours worked')),
       );
+      setState(() => _isSubmiting = false);
       return;
     }
 
     final payload = {
       'client': widget.client['id'],
-      'due_date': DateTime.now().add(Duration(days: 30)).toIso8601String().split('T')[0],
+      'due_date': DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T')[0],
       'description': _descriptionController.text.isEmpty ? 'Services rendered' : _descriptionController.text,
       'vat_rate': _vatRate * 100,
-      'hourly_rate': double.parse(_hourlyRateController.text),
-      'hours_worked': double.parse(_hoursWorkedController.text),
+      'hourly_rate': _hourlyRateController.text.isNotEmpty ? double.parse(_hourlyRateController.text) : 0.0,
+      'hours_worked': _hoursWorkedController.text.isNotEmpty ? double.parse(_hoursWorkedController.text) : 0.0,
       'bill_items': _billItems,
     };
 
@@ -157,10 +163,11 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
           SnackBar(content: Text('Invoice created successfully')),
         );
         final responseData = jsonDecode(response.body);
+        setState(() => _isSubmiting = false);
         Navigator.pop(context);
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(),isEstimate: false)),
+          MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(), isEstimate: false)),
         );
       } else {
         throw Exception('Failed to create invoice: ${response.reasonPhrase}');
@@ -169,41 +176,55 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error creating invoice: $e')),
       );
+    } finally {
+      setState(() => _isSubmiting = false);
     }
   }
 
-  void _addService() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return ScaleTransition(
-          scale: Tween<double>(begin: 0.5, end: 1.0).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: _AddServiceDialog(
-              availableServices: _availableServices,
-              onAdd: (serviceId, quantity) {
-                setState(() {
-                  _billItems.add({
-                    'service': serviceId,
-                    'quantity': quantity,
-                  });
+  void _addService() async {
+  final result = await showGeneralDialog<Map<String, dynamic>>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.5, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+        ),
+        child: FadeTransition(
+          opacity: animation,
+          child: _AddServiceDialog(
+            availableServices: _availableServices,
+            onAdd: (serviceId, quantity) {
+              // This won't be called directly anymore, but kept for compatibility
+              setState(() {
+                _billItems.add({
+                  'service': serviceId,
+                  'quantity': quantity,
                 });
-              },
-              onCreateService: _createService,
-              onFetchServices: _fetchServices,
-            ),
+              });
+            },
+            onCreateService: _createService,
+            onFetchServices: _fetchServices,
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
+
+  if (result != null && mounted) {
+    setState(() {
+      final service = result['service'] as Map<String, dynamic>;
+      final quantity = result['quantity'] as int;
+      _billItems.add({'service': service['id'], 'quantity': quantity});
+      if (!_availableServices.any((s) => s['id'] == service['id'])) {
+        _availableServices.add(service);
+      }
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +264,30 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
                   color: Colors.black.withOpacity(0.3),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
+              if (_isSubmiting)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: Card(
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: EdgeInsets.all(size.width * 0.05),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: kTravailFuteMainColor),
+                            SizedBox(height: size.height * 0.02),
+                            Text(
+                              'Création de la facture...',
+                              style: TextStyle(fontSize: size.width * 0.045, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -259,6 +304,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
     );
   }
 
+  // [Rest of your _build methods remain unchanged...]
   Widget _buildHeader(Size size) {
     return Container(
       padding: EdgeInsets.all(size.width * 0.04),
@@ -345,7 +391,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> with SingleTickerPr
             itemCount: _billItems.length,
             itemBuilder: (context, index) {
               final item = _billItems[index];
-              final service = _availableServices.firstWhere((s) => s['id'] == item['service']);
+              final service = _availableServices.firstWhere((s) => s['id'] == item['service'], orElse: () => {'id': item['service'], 'name': 'Unknown', 'description': '', 'base_price': 0.0});
               return FadeTransition(
                 opacity: _animation,
                 child: _buildServiceCard(size, service, item['quantity'], index),
@@ -509,31 +555,24 @@ class _AddServiceDialog extends StatefulWidget {
   State<_AddServiceDialog> createState() => _AddServiceDialogState();
 }
 
-class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _basePriceController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController();
+class _AddServiceDialogState extends State<_AddServiceDialog> {
+  final _searchController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _basePriceController = TextEditingController();
+  final _quantityController = TextEditingController();
   List<Map<String, dynamic>> _filteredServices = [];
   Map<String, dynamic>? _selectedService;
-  bool _isNameValid = false;
-  bool _isDescriptionValid = false;
-  bool _isBasePriceValid = false;
-  bool _isQuantityValid = false;
   bool _createNewService = false;
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _isSpeechInitialized = false;
-
-  bool get _isFormValid => (_selectedService != null && _isQuantityValid && !_createNewService) ||
-      (_isNameValid && _isDescriptionValid && _isBasePriceValid && _isQuantityValid);
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredServices = widget.availableServices;
-    _initSpeech();
+    _filteredServices = List.from(widget.availableServices);
     _searchController.addListener(_filterServices);
+    _quantityController.text = '1';
+    _quantityController.addListener(() => setState(() {}));
   }
 
   @override
@@ -543,19 +582,9 @@ class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerP
     _nameController.dispose();
     _descriptionController.dispose();
     _basePriceController.dispose();
+    _quantityController.removeListener(() => setState(() {}));
     _quantityController.dispose();
     super.dispose();
-  }
-
-  Future<void> _initSpeech() async {
-    if (await Permission.microphone.request().isGranted) {
-      _isSpeechInitialized = await _speech.initialize();
-      setState(() {});
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Microphone permission denied')),
-      );
-    }
   }
 
   void _filterServices() {
@@ -565,197 +594,266 @@ class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerP
         return service['name'].toLowerCase().contains(query) ||
             service['description'].toLowerCase().contains(query);
       }).toList();
-      _selectedService = null;
       _createNewService = query.isNotEmpty && _filteredServices.isEmpty;
       if (_createNewService) {
-        _nameController.text = _searchController.text;
+        _nameController.text = query;
+        _selectedService = null;
         _descriptionController.clear();
         _basePriceController.clear();
-        _validateName(_searchController.text);
       }
     });
   }
 
-  void _validateName(String? value) {
-    setState(() => _isNameValid = value?.isNotEmpty ?? false);
+  void _selectService(Map<String, dynamic> service) {
+    setState(() {
+      _selectedService = service;
+      _searchController.text = service['name'];
+      _createNewService = false;
+    });
+    FocusScope.of(context).unfocus();
   }
 
-  void _validateDescription(String? value) {
-    setState(() => _isDescriptionValid = value?.isNotEmpty ?? false);
+  bool _isFormValid() {
+    if (_createNewService) {
+      return _nameController.text.isNotEmpty &&
+          _descriptionController.text.isNotEmpty &&
+          double.tryParse(_basePriceController.text)?.isFinite == true &&
+          int.tryParse(_quantityController.text) != null &&
+          int.parse(_quantityController.text) > 0;
+    }
+    return _selectedService != null &&
+        int.tryParse(_quantityController.text) != null &&
+        int.parse(_quantityController.text) > 0;
   }
 
-  void _validateBasePrice(String? value) {
-    setState(() => _isBasePriceValid = value != null && double.tryParse(value) != null && double.parse(value) > 0);
-  }
+  Future<void> _handleAddService() async {
+  if (!_isFormValid()) return;
 
-  void _validateQuantity(String? value) {
-    setState(() => _isQuantityValid = value != null && int.tryParse(value) != null && int.parse(value) > 0);
-  }
+  setState(() => _isLoading = true);
 
+  try {
+    if (_createNewService) {
+      final newServiceId = await widget.onCreateService(
+        _nameController.text,
+        _descriptionController.text,
+        double.parse(_basePriceController.text),
+      );
+      if (newServiceId != null && mounted) {
+        final newService = {
+          'id': newServiceId,
+          'name': _nameController.text,
+          'description': _descriptionController.text,
+          'base_price': double.parse(_basePriceController.text),
+        };
+        // Removed widget.onAdd call here to avoid duplication
+        await widget.onFetchServices();
+        
+        setState(() {
+          _filteredServices = List.from(widget.availableServices);
+          _createNewService = false;
+          _selectedService = newService;
+          _searchController.text = newService['name'] as String;
+        });
+        if (mounted) {
+          Navigator.pop(context, {
+            'service': newService,
+            'quantity': int.parse(_quantityController.text),
+          });
+        }
+      }
+    } else if (_selectedService != null) {
+      // Removed widget.onAdd call here to avoid duplication
+      if (mounted) {
+        Navigator.pop(context, {
+          'service': _selectedService,
+          'quantity': int.parse(_quantityController.text),
+        });
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: ${e.toString()}')),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
+  }
+}
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: size.width * 0.8,
-        padding: EdgeInsets.all(size.width * 0.05),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
-        ),
+        width: size.width * 0.85,
+        padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Ajouter un service',
-                style: TextStyle(fontSize: size.width * 0.05, fontWeight: FontWeight.bold, color: kTravailFuteMainColor),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Ajouter un Service',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: kTravailFuteMainColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              SizedBox(height: size.height * 0.03),
+              const SizedBox(height: 16),
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  labelText: 'Rechercher un service',
-                  prefixIcon: Icon(Icons.search, color: kTravailFuteMainColor),
+                  hintText: 'Rechercher ou créer un service...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _createNewService = false;
+                              _selectedService = null;
+                            });
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
                 ),
               ),
-              SizedBox(height: size.height * 0.02),
+              const SizedBox(height: 16),
               if (!_createNewService && _filteredServices.isNotEmpty)
                 Container(
-                  constraints: BoxConstraints(maxHeight: size.height * 0.2),
+                  constraints: BoxConstraints(maxHeight: size.height * 0.25),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: _filteredServices.length,
                     itemBuilder: (context, index) {
                       final service = _filteredServices[index];
-                      return ListTile(
-                        title: Text(service['name']),
-                        subtitle: Text('€${service['base_price'].toStringAsFixed(2)}'),
-                        onTap: () {
-                          setState(() {
-                            _selectedService = service;
-                            _searchController.text = service['name'];
-                            _nameController.text = service['name'];
-                            _descriptionController.text = service['description'];
-                            _basePriceController.text = service['base_price'].toString();
-                            _isNameValid = true;
-                            _isDescriptionValid = true;
-                            _isBasePriceValid = true;
-                          });
-                        },
-                        selected: _selectedService != null && _selectedService!['id'] == service['id'],
-                        selectedTileColor: kTravailFuteMainColor.withOpacity(0.1),
+                      final isSelected = _selectedService?['id'] == service['id'];
+                      return Card(
+                        elevation: 0,
+                        color: isSelected ? kTravailFuteMainColor.withOpacity(0.1) : null,
+                        child: ListTile(
+                          title: Text(service['name']),
+                          subtitle: Text('€${service['base_price'].toStringAsFixed(2)}'),
+                          trailing: Icon(
+                            isSelected ? Icons.check_circle : Icons.add_circle_outline,
+                            color: isSelected ? kTravailFuteMainColor : null,
+                          ),
+                          onTap: () => _selectService(service),
+                        ),
                       );
                     },
                   ),
-                ),
-              if (_createNewService) ...[
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                )
+              else if (_createNewService) ...[
+                _buildTextField(
                   controller: _nameController,
-                  onChanged: _validateName,
-                  decoration: InputDecoration(
-                    labelText: 'Nom',
-                    prefixIcon: Icon(Icons.label, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
+                  label: 'Nom du service',
+                  icon: Icons.label,
+                  onChanged: (_) => setState(() {}),
                 ),
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                const SizedBox(height: 12),
+                _buildTextField(
                   controller: _descriptionController,
-                  onChanged: _validateDescription,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    prefixIcon: Icon(Icons.description, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
+                  label: 'Description',
+                  icon: Icons.description,
+                  onChanged: (_) => setState(() {}),
                 ),
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                const SizedBox(height: 12),
+                _buildTextField(
                   controller: _basePriceController,
-                  onChanged: _validateBasePrice,
+                  label: 'Prix (€)',
+                  icon: Icons.euro,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                  decoration: InputDecoration(
-                    labelText: 'Prix de base (€)',
-                    prefixIcon: Icon(Icons.euro, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
+                  onChanged: (_) => setState(() {}),
                 ),
               ],
-              SizedBox(height: size.height * 0.02),
-              TextField(
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _quantityController,
-                onChanged: _validateQuantity,
+                label: 'Quantité',
+                icon: Icons.format_list_numbered,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: 'Quantité',
-                  prefixIcon: Icon(Icons.format_list_numbered, color: kTravailFuteMainColor),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                ),
+                onChanged: (_) => setState(() {}),
               ),
-              SizedBox(height: size.height * 0.03),
-              GestureDetector(
-                onTap: _isFormValid
-                    ? () async {
-                        if (_createNewService) {
-                          final newServiceId = await widget.onCreateService(
-                            _nameController.text,
-                            _descriptionController.text,
-                            double.parse(_basePriceController.text),
-                          );
-                          if (newServiceId != null) {
-                            widget.onAdd(newServiceId, int.parse(_quantityController.text));
-                            await widget.onFetchServices();
-                          }
-                        } else if (_selectedService != null) {
-                          widget.onAdd(_selectedService!['id'], int.parse(_quantityController.text));
-                        }
-                        Navigator.pop(context);
-                      }
-                    : null,
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: size.height * 0.015, horizontal: size.width * 0.05),
-                  decoration: BoxDecoration(
-                    color: _isFormValid ? kTravailFuteMainColor : Colors.grey,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
                   ),
-                  child: Text(
-                    'Ajouter',
-                    style: TextStyle(color: Colors.white, fontSize: size.width * 0.045, fontWeight: FontWeight.bold),
+                  ElevatedButton(
+                    onPressed: _isFormValid() && !_isLoading ? _handleAddService : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kTravailFuteMainColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Ajouter', style: TextStyle(color: Colors.white)),
                   ),
-                ),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: kTravailFuteMainColor),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.grey[100],
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     );
   }

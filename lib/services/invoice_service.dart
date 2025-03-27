@@ -21,22 +21,14 @@ class InvoiceService {
       final responseData = json.decode(response.body);
       logger.i("Response Data: $responseData");
       checkInvalidTokenOrUser(context, response);
-      // if (response.statusCode == 200) {
-      //   final responseData = json.decode(response.body);
-      //   logger.i("Response Data: $responseData");
-      //   if (responseData["next"] != null) {
-      //     final nextUrl = responseData["next"] as String;
-      //     final nextPath = nextUrl.startsWith('http://') 
-      //     ? nextUrl.replaceFirst('http://', 'https://') 
-      //     : nextUrl;
-      //     final nextResponse = await http.get(Uri.parse(nextPath), headers: headers);
-      //     final nextData = json.decode(nextResponse.body);
-      //     responseData['results'].addAll(nextData['results']);
-      //   }
-        return responseData;
-      // } else {
-      //   throw Exception('Failed to load invoices: ${response.reasonPhrase}');
-      // }
+        if (response.statusCode == 200) {
+          final responseData = json.decode(response.body);
+          logger.i("Response Data: $responseData");
+          return responseData['results'];
+        }
+        else {
+        throw Exception('Failed to load invoices: ${response.reasonPhrase}');
+      }
     } catch (e) {
       throw Exception('Error in getInvoiceList: $e');
     }
@@ -54,15 +46,6 @@ class InvoiceService {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         logger.i("Response Data: $responseData");
-        // if (responseData["next"] != null) {
-        //   final nextUrl = responseData["next"];
-        //   final nextPath = nextUrl.startsWith('http://') 
-        //   ? nextUrl.replaceFirst('http://', 'https://') 
-        //   : nextUrl;
-        //   final nextResponse = await http.get(Uri.parse(nextPath), headers: headers);
-        //   final nextData = json.decode(nextResponse.body);
-        //   responseData['results'].addAll(nextData['results']);
-        // }
         return responseData;
       } else {
         throw Exception('Failed to load invoices: ${response.reasonPhrase}');

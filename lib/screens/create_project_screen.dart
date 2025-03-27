@@ -20,6 +20,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
   late Animation<double> _scaleAnimation;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
   bool isLoading = false;
@@ -42,6 +43,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
   void dispose() {
     _controller.dispose();
     _nameController.dispose();
+    _addressController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -79,6 +81,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
       'name': _nameController.text,
       'client': widget.user['id'],
       'description': _descriptionController.text,
+      'address': _addressController.text,
       'start_date': _startDate?.toIso8601String(),
       'end_date': _endDate?.toIso8601String(), // Optional field
     };
@@ -203,11 +206,13 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
             SizedBox(height: width * 0.04),
             _buildTextField(width, _descriptionController, 'Description', Icons.description, maxLines: 3),
             SizedBox(height: width * 0.06),
-            _buildSectionTitle(width, 'Chronologie'),
+            _buildTextField(width, _addressController, 'Addresse', Icons.location_city,),
+            SizedBox(height: width * 0.06),
+            _buildSectionTitle(width, 'Date de début'),
             SizedBox(height: width * 0.03),
             _buildDateField(width, 'Date de début', _startDate, () => _pickDate(true)),
-            SizedBox(height: width * 0.04),
-            _buildDateField(width, 'Date de fin (optionnel)', _endDate, () => _pickDate(false)),
+            // SizedBox(height: width * 0.04),
+            // _buildDateField(width, 'Date de fin (optionnel)', _endDate, () => _pickDate(false)),
           ],
         ),
       ),
@@ -260,6 +265,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
   }
 
   Widget _buildDateField(double width, String label, DateTime? date, VoidCallback onTap) {
+    // Use the provided date or default to current date
+    final displayDate = date ?? DateTime.now();
+    
     return FadeTransition(
       opacity: _fadeAnimation,
       child: GestureDetector(
@@ -282,12 +290,12 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
               Icon(Icons.calendar_today, color: kTravailFuteMainColor, size: width * 0.05),
               SizedBox(width: width * 0.03),
               Text(
-                date != null ? DateFormat('d MMM yyyy', 'fr_FR').format(date) : label,
+                DateFormat('d MMM yyyy', 'fr_FR').format(displayDate),
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: width * 0.04,
-                  color: date != null ? Colors.black87 : Colors.grey[600],
-                  fontWeight: date != null ? FontWeight.w500 : FontWeight.w400,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

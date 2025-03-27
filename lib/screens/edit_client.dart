@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_detail.dart';
+import 'package:travail_fute/screens/clients.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/utils/logger.dart';
 
@@ -121,7 +122,7 @@ class _EditClientState extends State<EditClient> {
                         );
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => ClientDetail(client:widget.client),
+                            builder: (context) => ClientsList(),
                           ),
                         );
                     } catch (e) {

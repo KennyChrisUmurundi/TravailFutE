@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/screens/clients.dart';
 import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/screens/pdf_viewer_screen.dart';
+import 'package:travail_fute/services/invoice_service.dart';
 import 'package:travail_fute/services/receipt_service.dart';
+import 'package:travail_fute/utils/logger.dart';
 // import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ReceiptScreen extends StatefulWidget {
@@ -33,7 +36,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
     if (widget.bills != null) {
       _receipts = widget.bills!.cast<Map<String, dynamic>>();
       _isLoading = false;
-    } else {
+    } else if(widget.bills == null && widget.isEstimate){
+      fetchEstimates();  
+    }
+    else{
       fetchReceipts();
     }
   }
@@ -47,10 +53,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
   void fetchReceipts() async {
     try {
       final receipts = await ReceiptService().fetchReceipts(context);
-      setState(() {
-        _receipts = receipts.cast<Map<String, dynamic>>();
-        _isLoading = false;
-      });
+      if(mounted){
+        setState(() {
+          _receipts = receipts.cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _errorMessage = 'Échec du chargement des factures';
@@ -59,8 +67,31 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
     }
   }
 
+  void fetchEstimates()async{
+    try {
+      final estimates = await InvoiceService().getInvoiceList(context);
+      logger.i("Estimates: $estimates");
+      if(mounted){
+        setState(() {
+          _receipts = estimates.cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Échec du chargement des devis';
+        _isLoading = false;
+      });
+    }
+  }
+
   void _navigateToNewInvoice() {
-    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClientsList(),
+      ),
+    );
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'package:travail_fute/screens/pdf_viewer_screen.dart';
 import 'package:travail_fute/utils/logger.dart';
 import 'package:travail_fute/utils/provider.dart';
 
@@ -160,7 +161,13 @@ class _NewEstimateScreenState extends State<NewEstimateScreen> with SingleTicker
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Estimate created successfully')),
         );
+        final responseData = jsonDecode(response.body);
         Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => PdfViewerScreen(billOrEstimateId: responseData["id"].toString(),isEstimate: true)),
+        );
+        
       } else {
         throw Exception('Failed to create estimate: ${response.reasonPhrase}');
       }
@@ -514,31 +521,23 @@ class _AddServiceDialog extends StatefulWidget {
   State<_AddServiceDialog> createState() => _AddServiceDialogState();
 }
 
-class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _basePriceController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController();
+class _AddServiceDialogState extends State<_AddServiceDialog> {
+  final _searchController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _basePriceController = TextEditingController();
+  final _quantityController = TextEditingController();
   List<Map<String, dynamic>> _filteredServices = [];
   Map<String, dynamic>? _selectedService;
-  bool _isNameValid = false;
-  bool _isDescriptionValid = false;
-  bool _isBasePriceValid = false;
-  bool _isQuantityValid = false;
   bool _createNewService = false;
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _isSpeechInitialized = false;
-
-  bool get _isFormValid => (_selectedService != null && _isQuantityValid && !_createNewService) ||
-      (_isNameValid && _isDescriptionValid && _isBasePriceValid && _isQuantityValid);
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _filteredServices = widget.availableServices;
-    _initSpeech();
     _searchController.addListener(_filterServices);
+    _quantityController.text = '1'; // Default quantity
   }
 
   @override
@@ -552,17 +551,6 @@ class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerP
     super.dispose();
   }
 
-  Future<void> _initSpeech() async {
-    if (await Permission.microphone.request().isGranted) {
-      _isSpeechInitialized = await _speech.initialize();
-      setState(() {});
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Microphone permission denied')),
-      );
-    }
-  }
-
   void _filterServices() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -570,31 +558,54 @@ class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerP
         return service['name'].toLowerCase().contains(query) ||
             service['description'].toLowerCase().contains(query);
       }).toList();
-      _selectedService = null;
       _createNewService = query.isNotEmpty && _filteredServices.isEmpty;
       if (_createNewService) {
-        _nameController.text = _searchController.text;
-        _descriptionController.clear();
-        _basePriceController.clear();
-        _validateName(_searchController.text);
+        _nameController.text = query;
+        _selectedService = null;
       }
     });
   }
 
-  void _validateName(String? value) {
-    setState(() => _isNameValid = value?.isNotEmpty ?? false);
+  bool _isFormValid() {
+    if (_createNewService) {
+      return _nameController.text.isNotEmpty &&
+          _descriptionController.text.isNotEmpty &&
+          double.tryParse(_basePriceController.text)?.isFinite == true &&
+          int.tryParse(_quantityController.text) != null &&
+          int.parse(_quantityController.text) > 0;
+    }
+    return _selectedService != null &&
+        int.tryParse(_quantityController.text) != null &&
+        int.parse(_quantityController.text) > 0;
   }
 
-  void _validateDescription(String? value) {
-    setState(() => _isDescriptionValid = value?.isNotEmpty ?? false);
-  }
-
-  void _validateBasePrice(String? value) {
-    setState(() => _isBasePriceValid = value != null && double.tryParse(value) != null && double.parse(value) > 0);
-  }
-
-  void _validateQuantity(String? value) {
-    setState(() => _isQuantityValid = value != null && int.tryParse(value) != null && int.parse(value) > 0);
+  Future<void> _handleAddService() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      if (_createNewService) {
+        final newServiceId = await widget.onCreateService(
+          _nameController.text,
+          _descriptionController.text,
+          double.parse(_basePriceController.text),
+        );
+        if (newServiceId != null) {
+          widget.onAdd(newServiceId, int.parse(_quantityController.text));
+          await widget.onFetchServices();
+        }
+      } else if (_selectedService != null) {
+        widget.onAdd(_selectedService!['id'], int.parse(_quantityController.text));
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -602,165 +613,168 @@ class _AddServiceDialogState extends State<_AddServiceDialog> with SingleTickerP
     final size = MediaQuery.of(context).size;
 
     return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: size.width * 0.8,
-        padding: EdgeInsets.all(size.width * 0.05),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
-        ),
+        width: size.width * 0.85,
+        padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Ajouter un service',
-                style: TextStyle(fontSize: size.width * 0.05, fontWeight: FontWeight.bold, color: kTravailFuteMainColor),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Ajouter un Service',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: kTravailFuteMainColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              SizedBox(height: size.height * 0.03),
+              const SizedBox(height: 16),
+              // Search Field
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  labelText: 'Rechercher un service',
-                  prefixIcon: Icon(Icons.search, color: kTravailFuteMainColor),
+                  hintText: 'Rechercher ou créer un service...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _createNewService = false);
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
                 ),
               ),
-              SizedBox(height: size.height * 0.02),
+              const SizedBox(height: 16),
+              // Service List or New Service Form
               if (!_createNewService && _filteredServices.isNotEmpty)
                 Container(
-                  constraints: BoxConstraints(maxHeight: size.height * 0.2),
+                  constraints: BoxConstraints(maxHeight: size.height * 0.25),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: _filteredServices.length,
                     itemBuilder: (context, index) {
                       final service = _filteredServices[index];
-                      return ListTile(
-                        title: Text(service['name']),
-                        subtitle: Text('€${service['base_price'].toStringAsFixed(2)}'),
-                        onTap: () {
-                          setState(() {
-                            _selectedService = service;
-                            _searchController.text = service['name'];
-                            _nameController.text = service['name'];
-                            _descriptionController.text = service['description'];
-                            _basePriceController.text = service['base_price'].toString();
-                            _isNameValid = true;
-                            _isDescriptionValid = true;
-                            _isBasePriceValid = true;
-                          });
-                        },
-                        selected: _selectedService != null && _selectedService!['id'] == service['id'],
-                        selectedTileColor: kTravailFuteMainColor.withOpacity(0.1),
+                      return Card(
+                        elevation: 0,
+                        color: _selectedService?['id'] == service['id']
+                            ? kTravailFuteMainColor.withOpacity(0.1)
+                            : null,
+                        child: ListTile(
+                          title: Text(service['name']),
+                          subtitle: Text('€${service['base_price'].toStringAsFixed(2)}'),
+                          trailing: const Icon(Icons.add_circle_outline),
+                          onTap: () => setState(() => _selectedService = service),
+                        ),
                       );
                     },
                   ),
-                ),
-              if (_createNewService) ...[
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                )
+              else if (_createNewService) ...[
+                _buildTextField(
                   controller: _nameController,
-                  onChanged: _validateName,
-                  decoration: InputDecoration(
-                    labelText: 'Nom',
-                    prefixIcon: Icon(Icons.label, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
+                  label: 'Nom du service',
+                  icon: Icons.label,
                 ),
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                const SizedBox(height: 12),
+                _buildTextField(
                   controller: _descriptionController,
-                  onChanged: _validateDescription,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    prefixIcon: Icon(Icons.description, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
+                  label: 'Description',
+                  icon: Icons.description,
                 ),
-                SizedBox(height: size.height * 0.02),
-                TextField(
+                const SizedBox(height: 12),
+                _buildTextField(
                   controller: _basePriceController,
-                  onChanged: _validateBasePrice,
+                  label: 'Prix (€)',
+                  icon: Icons.euro,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                  decoration: InputDecoration(
-                    labelText: 'Prix de base (€)',
-                    prefixIcon: Icon(Icons.euro, color: kTravailFuteMainColor),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                  ),
                 ),
               ],
-              SizedBox(height: size.height * 0.02),
-              TextField(
+              const SizedBox(height: 16),
+              // Quantity Field
+              _buildTextField(
                 controller: _quantityController,
-                onChanged: _validateQuantity,
+                label: 'Quantité',
+                icon: Icons.format_list_numbered,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: 'Quantité',
-                  prefixIcon: Icon(Icons.format_list_numbered, color: kTravailFuteMainColor),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2)),
-                ),
               ),
-              SizedBox(height: size.height * 0.03),
-              GestureDetector(
-                onTap: _isFormValid
-                    ? () async {
-                        if (_createNewService) {
-                          final newServiceId = await widget.onCreateService(
-                            _nameController.text,
-                            _descriptionController.text,
-                            double.parse(_basePriceController.text),
-                          );
-                          if (newServiceId != null) {
-                            widget.onAdd(newServiceId, int.parse(_quantityController.text));
-                            await widget.onFetchServices();
-                          }
-                        } else if (_selectedService != null) {
-                          widget.onAdd(_selectedService!['id'], int.parse(_quantityController.text));
-                        }
-                        Navigator.pop(context);
-                      }
-                    : null,
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: size.height * 0.015, horizontal: size.width * 0.05),
-                  decoration: BoxDecoration(
-                    color: _isFormValid ? kTravailFuteMainColor : Colors.grey,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
+              const SizedBox(height: 20),
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
                   ),
-                  child: Text(
-                    'Ajouter',
-                    style: TextStyle(color: Colors.white, fontSize: size.width * 0.045, fontWeight: FontWeight.bold),
+                  ElevatedButton(
+                    onPressed: _isFormValid() && !_isLoading ? _handleAddService : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kTravailFuteMainColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Ajouter', style: TextStyle(color: Colors.white)),
                   ),
-                ),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: kTravailFuteMainColor),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.grey[100],
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     );
   }

@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/services/project_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final Map<String, dynamic> project;
@@ -19,67 +19,80 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  final ProjectService _projectService = ProjectService();
   final List<File> _images = [];
   List<String> _uploadedImages = [];
   Map<String, String> _imageCaptions = {};
-  List<Map<String, dynamic>> _comments = [];
-  final TextEditingController _commentController = TextEditingController();
-  bool _isCompleted = false;
   bool _isLoading = false;
+  final Color _primaryColor = const Color(0xFFe29a32);
+  final Color _accentColor = const Color(0xFFF5C77C);
+  final ImagePicker _picker = ImagePicker();
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _comments = List<Map<String, dynamic>>.from(widget.project['comments'] ?? []);
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     )..forward();
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
-    _isCompleted = widget.project['is_completed'] ?? false;
     _uploadedImages = List<String>.from((widget.project['images'] ?? []).map((image) => image['image'] ?? ''));
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _commentController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      String? caption = await _showCaptionDialog(context);
-      setState(() {
-        _images.add(File(pickedFile.path));
-        if (caption != null && caption.isNotEmpty) {
-          _imageCaptions[pickedFile.path] = caption;
+  Future<void> _pickImage({required ImageSource source}) async {
+    try {
+      setState(() => _isLoading = true);
+
+      // Pick the image
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        final imageFile = File(pickedFile.path);
+
+        // Show caption dialog
+        String? caption = await _showCaptionDialog(context);
+
+        // Call projectService().addImage
+        try {
+          final response = await ProjectService().addImage(
+            context,
+            widget.project['id'].toString(),
+            imageFile.path,
+            caption ?? '',
+          );
+          if(mounted){
+            setState(() {
+              _uploadedImages.add(response);
+            });
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
         }
-      });
-      try {
-        final url = await _projectService.addImage(context, widget.project["id"].toString(), pickedFile.path);
-        if (url != null) {
-          setState(() {
-            _uploadedImages.add(url);
-            if (caption != null && caption.isNotEmpty) {
-              _imageCaptions[url] = caption;
-              _imageCaptions.remove(pickedFile.path);
-            }
-            _images.removeWhere((file) => file.path == pickedFile.path);
-          });
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du téléchargement de l\'image: $e')),
-        );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -88,92 +101,143 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Ajouter une légende', style: TextStyle(fontFamily: 'Poppins')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        title: Text(
+            'Ajouter une description',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: _primaryColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
         content: TextField(
           controller: captionController,
+          maxLines: 3,
           decoration: InputDecoration(
-            hintText: 'Entrez une légende (optionnel)',
-            border: OutlineInputBorder(),
+            hintText: 'Décrivez ce moment...',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: _accentColor.withOpacity(0.1),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: _primaryColor, width: 2),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         actions: [
-          TextButton(
+            TextButton(
             onPressed: () => Navigator.pop(context, null),
-            child: Text('Passer'),
+            child: Text('Ignorer', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
           ),
-          TextButton(
+            ElevatedButton(
             onPressed: () => Navigator.pop(context, captionController.text),
-            child: Text('Sauvegarder'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: Text('Enregistrer', style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _deleteImage(String image) async {
-    try {
-      setState(() {
-        if (image.startsWith('http')) {
-          _uploadedImages.remove(image);
-        } else {
-          _images.removeWhere((file) => file.path == image);
-        }
-        _imageCaptions.remove(image);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la suppression de l\'image: $e')),
-      );
-    }
-  }
-
-  void _showFullImage(String image, String? caption) {
+  void _showFullImage(List<String> allImages, int initialIndex) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
+        insetPadding: const EdgeInsets.all(10),
         child: Stack(
           children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                color: Colors.black.withOpacity(0.8),
-                child: Center(
-                  child: image.startsWith('http')
-                      ? CachedNetworkImage(imageUrl: image, fit: BoxFit.contain)
-                      : Image.file(File(image), fit: BoxFit.contain),
-                ),
-              ),
+            PageView.builder(
+              itemCount: allImages.length,
+              controller: PageController(initialPage: initialIndex, viewportFraction: 0.95),
+              itemBuilder: (context, index) {
+                final image = allImages[index];
+                final caption = _imageCaptions[image];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: image.startsWith('http')
+                              ? CachedNetworkImage(imageUrl: image, fit: BoxFit.contain)
+                              : Image.file(File(image), fit: BoxFit.contain),
+                        ),
+                      ),
+                      if (caption != null && caption.isNotEmpty)
+                        Positioned(
+                          bottom: 20,
+                          left: 20,
+                          right: 20,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              caption,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
-            if (caption != null && caption.isNotEmpty)
-              Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    caption,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
             Positioned(
               top: 20,
               right: 20,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(context),
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                radius: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: SmoothPageIndicator(
+                controller: PageController(initialPage: initialIndex),
+                count: allImages.length,
+                effect: ExpandingDotsEffect(
+                  dotHeight: 8,
+                  dotWidth: 8,
+                  activeDotColor: _primaryColor,
+                  dotColor: Colors.white.withOpacity(0.5),
+                  expansionFactor: 3,
+                ),
               ),
             ),
           ],
@@ -181,116 +245,45 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       ),
     );
   }
-
-  Future<void> _toggleComplete() async {
-    setState(() => _isLoading = true);
-    try {
-      await _projectService.updateProject(context, widget.project['id'], {'is_completed': !_isCompleted});
-      setState(() => _isCompleted = !_isCompleted);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isCompleted ? 'Chantier marqué comme terminé' : 'Chantier réouvert')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _addComment() async {
-    if (_commentController.text.trim().isEmpty) return;
-    final commentText = _commentController.text.trim();
-    setState(() {
-      _comments.add({
-        'content': commentText,
-        'timestamp': DateTime.now(),
-      });
-      _commentController.clear();
-    });
-    try {
-      await _projectService.addComment(context, widget.project["id"].toString(), commentText);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'ajout du commentaire: $e')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(width),
-                    SizedBox(height: width * 0.04),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildProjectInfo(width),
-                          SizedBox(height: width * 0.06),
-                          _buildImageSection(width),
-                          SizedBox(height: width * 0.06),
-                          _buildCommentsSection(width),
-                          SizedBox(height: width * 0.1),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_isLoading) _buildLoadingOverlay(width),
-            ],
-          ),
-        ),
-      ),
-      // floatingActionButton: _buildFAB(width),
-    );
-  }
-
-  Widget _buildHeader(double width) {
+Widget _buildHeader(Size size, double width) {
     return Container(
       padding: EdgeInsets.all(width * 0.04),
       decoration: BoxDecoration(
-        color: kWhiteColor,
+        gradient: LinearGradient(
+          colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black12,
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: Icon(Icons.arrow_back, color: kTravailFuteMainColor, size: width * 0.06),
-            onPressed: () => Navigator.pop(context),
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: EdgeInsets.all(width * 0.02),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kWhiteColor.withOpacity(0.2),
+              ),
+              child: Icon(Icons.arrow_back, color: kWhiteColor, size: width * 0.06),
+            ),
           ),
+          SizedBox(width: width * 0.03),
           Expanded(
             child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Row(
-                children: [
-                  SizedBox(
-                    height: 30,
-                    child: Image.asset('assets/images/splash.png'),
-                  ),
-                  SizedBox(width: width * 0.03),
-                ],
+              opacity: _animation,
+              child: Text(
+                'Projects',
+                style: TextStyle(
+                  fontSize: width * 0.05,
+                  fontWeight: FontWeight.bold,
+                  color: kWhiteColor,
+                ),
               ),
             ),
           ),
@@ -298,82 +291,98 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
       ),
     );
   }
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final allImages = [..._uploadedImages, ..._images.map((file) => file.path)];
 
-  Widget _buildProjectInfo(double width) {
-    final startDate = widget.project['start_date'] != null
-        ? DateFormat('d MMM yyyy', 'fr_FR').format(DateTime.parse(widget.project['start_date']))
-        : 'Non défini';
-    final endDate = widget.project['end_date'] != null
-        ? DateFormat('d MMM yyyy', 'fr_FR').format(DateTime.parse(widget.project['end_date']))
-        : 'Non défini';
-
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: kWhiteColor,
-      child: Padding(
-        padding: EdgeInsets.all(width * 0.05),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: SafeArea(
+        child: Stack(
           children: [
-            Row(
+            Column(
               children: [
+                _buildHeader(size, width),
                 Expanded(
-                  child: Text(
-                    widget.project['name'] ?? 'Chantier sans nom',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: width * 0.06,
-                      fontWeight: FontWeight.w700,
-                      color: kTravailFuteSecondaryColor,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildClientInfo(width),
+                          const SizedBox(height: 24),
+                          _buildImageSection(width, allImages),
+                          const SizedBox(height: 24),
+                          _buildAddPhotoButtons(width),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                Icon(
-                  _isCompleted ? Icons.check_circle : Icons.circle_outlined,
-                  color: _isCompleted ? Colors.green : kTravailFuteMainColor,
-                  size: width * 0.06,
-                ),
               ],
             ),
-            SizedBox(height: width * 0.02),
+            if (_isLoading) _buildLoadingOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClientInfo(double width) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              widget.project['description'] ?? 'Aucune description',
+              widget.project['client'] ?? 'No client name',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: width * 0.04,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w400,
+                fontSize: width * 0.06,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
               ),
             ),
-            SizedBox(height: width * 0.04),
+            // Text supports Unicode characters including French accents (é, è, ê, ë, à, â, etc.)
+            const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.calendar_today, color: kTravailFuteMainColor, size: width * 0.05),
-                SizedBox(width: width * 0.03),
-                Text(
-                  'Début: $startDate',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: width * 0.04,
-                    color: Colors.grey[800],
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(Icons.location_on, size: 24, color: _primaryColor),
                 ),
-              ],
-            ),
-            SizedBox(height: width * 0.02),
-            Row(
-              children: [
-                Icon(Icons.calendar_today_outlined, color: kTravailFuteMainColor, size: width * 0.05),
-                SizedBox(width: width * 0.03),
-                Text(
-                  'Fin: $endDate',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: width * 0.04,
-                    color: Colors.grey[800],
-                    fontWeight: FontWeight.w500,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.project['address'] ?? 'No address specified',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      color: Colors.grey[800],
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -384,333 +393,244 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> with SingleTi
     );
   }
 
-  Widget _buildImageSection(double width) {
-    final allImages = [..._uploadedImages, ..._images.map((file) => file.path)];
-
+  Widget _buildImageSection(double width, List<String> allImages) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FadeTransition(
-          opacity: _fadeAnimation,
-          child: Text(
-            'Images',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: width * 0.045,
-              fontWeight: FontWeight.w600,
-              color: kTravailFuteMainColor,
-            ),
-          ),
-        ),
-        SizedBox(height: width * 0.03),
-        SizedBox(
-          height: width * 0.45,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: allImages.length + 1,
-            itemBuilder: (context, index) {
-              if (index == allImages.length) {
-                return GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: width * 0.4,
-                    margin: EdgeInsets.only(right: width * 0.03),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_a_photo, color: kTravailFuteMainColor, size: width * 0.08),
-                        SizedBox(height: width * 0.02),
-                        Text(
-                          'Ajouter',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: width * 0.035,
-                            color: kTravailFuteMainColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              final image = allImages[index];
-              final caption = _imageCaptions[image];
-
-              return GestureDetector(
-                onTap: () => _showFullImage(image, caption),
-                child: Container(
-                  width: width * 0.4,
-                  margin: EdgeInsets.only(right: width * 0.03),
-                  child: Stack(
-                    children: [
-                      Column(
-                        children: [
-                          Container(
-                            height: width * 0.4,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: image.startsWith('http')
-                                  ? CachedNetworkImage(
-                                      imageUrl: image,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Center(
-                                        child: CircularProgressIndicator(
-                                          color: kTravailFuteMainColor,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) => Icon(
-                                        Icons.error,
-                                        color: Colors.red,
-                                        size: width * 0.08,
-                                      ),
-                                    )
-                                  : Image.file(File(image), fit: BoxFit.cover),
-                            ),
-                          ),
-                          // if (caption != null && caption.isNotEmpty)
-                          //   Container(
-                          //     width: double.infinity,
-                          //     padding: EdgeInsets.all(width * 0.015),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.black.withOpacity(0.7),
-                          //     ),
-                          //     child: Text(
-                          //       caption,
-                          //       style: TextStyle(
-                          //         fontFamily: 'Poppins',
-                          //         fontSize: width * 0.02,
-                          //         color: Colors.white,
-                          //       ),
-                          //       maxLines: 2,
-                          //       overflow: TextOverflow.ellipsis,
-                          //     ),
-                          //   ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 5,
-                        right: 5,
-                        child: GestureDetector(
-                          onTap: () => _deleteImage(image),
-                          child: Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                              size: width * 0.05,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCommentsSection(double width) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FadeTransition(
-          opacity: _fadeAnimation,
-          child: Text(
-            'Commentaires',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: width * 0.045,
-              fontWeight: FontWeight.w600,
-              color: kTravailFuteMainColor,
-            ),
-          ),
-        ),
-        SizedBox(height: width * 0.03),
-        ..._comments.map((comment) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: width * 0.02),
-            child: Container(
-              padding: EdgeInsets.all(width * 0.03),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    comment['content'] ?? 'Aucun contenu',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: width * 0.04,
-                      color: Colors.grey[800],
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  SizedBox(height: width * 0.015),
-                  Text(
-                    DateFormat('d MMM yyyy, HH:mm', 'fr_FR').format(
-                      comment['created_at'] != null ? DateTime.parse(comment['created_at']) : DateTime.now()
-                    ),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: width * 0.035,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-        SizedBox(height: width * 0.04),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _commentController,
-                  decoration: InputDecoration(
-                    hintText: 'Ajouter un commentaire',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.grey[600],
-                      fontSize: width * 0.04,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: width * 0.04,
-                      horizontal: width * 0.04,
-                    ),
-                  ),
-                ),
+            Text(
+              'Project Photos (${allImages.length})',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: _primaryColor,
               ),
             ),
-            SizedBox(width: width * 0.03),
-            GestureDetector(
-              onTap: _addComment,
-              child: Container(
-                padding: EdgeInsets.all(width * 0.03),
-                decoration: BoxDecoration(
-                  color: kTravailFuteMainColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: kTravailFuteMainColor.withOpacity(0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+            if (allImages.isNotEmpty)
+              TextButton(
+                onPressed: () => _showFullImage(allImages, 0),
+                child: Text(
+                  'View All',
+                  style: TextStyle(color: _primaryColor, fontSize: 14),
                 ),
-                child: Icon(Icons.send, color: kWhiteColor, size: width * 0.06),
               ),
-            ),
           ],
         ),
+        const SizedBox(height: 16),
+        allImages.isEmpty
+            ? Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.photo_library, size: 64, color: _accentColor),
+                    const SizedBox(height: 16),
+                    Text(
+                        'Aucune photo pour le moment',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                        'Capturez vos progrès de travail',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SizedBox(
+                height: 400,
+                child: GridView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.75,
+                  ),
+                  itemCount: allImages.length,
+                  itemBuilder: (context, index) {
+                    final image = allImages[index];
+                    final caption = _imageCaptions[image];
+
+                    return GestureDetector(
+                      onTap: () => _showFullImage(allImages, index),
+                      child: Hero(
+                        tag: image,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                image.startsWith('http')
+                                    ? CachedNetworkImage(
+                                        imageUrl: image,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          color: Colors.grey[200],
+                                          child: Center(child: CircularProgressIndicator(color: _primaryColor)),
+                                        ),
+                                        errorWidget: (context, url, error) => const Icon(Icons.error),
+                                      )
+                                    : Image.file(File(image), fit: BoxFit.cover),
+                                if (caption != null && caption.isNotEmpty)
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                          colors: [
+                                            Colors.black.withOpacity(0.8),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                      child: Text(
+                                        caption,
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 14,
+                                          color: Colors.white,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
       ],
     );
   }
 
-  Widget _buildLoadingOverlay(double width) {
+  Widget _buildAddPhotoButtons(double width) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.camera_alt, size: 24, color: Colors.white),
+            label: const Text(
+              'Camera',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onPressed: () => _pickImage(source: ImageSource.camera),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+              shadowColor: _primaryColor.withOpacity(0.3),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: Icon(Icons.photo_library, size: 24, color: _primaryColor),
+            label: Text(
+              'Gallery',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: _primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onPressed: () => _pickImage(source: ImageSource.gallery),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _accentColor,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
     return Container(
       color: Colors.black.withOpacity(0.5),
       child: Center(
         child: Container(
-          padding: EdgeInsets.all(width * 0.05),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: kWhiteColor,
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(kTravailFuteMainColor),
-            strokeWidth: 4,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFAB(double width) {
-    return FloatingActionButton(
-      onPressed: _toggleComplete,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [kTravailFuteMainColor, kTravailFuteSecondaryColor],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: kTravailFuteMainColor.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: EdgeInsets.all(width * 0.04),
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Icon(
-            _isCompleted ? Icons.undo : Icons.check,
-            size: width * 0.07,
-            color: kWhiteColor,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Traitement en cours...',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: _primaryColor,
+                  fontSize: 16,
+                ),
+              ),
+            ],
           ),
         ),
       ),

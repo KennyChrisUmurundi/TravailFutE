@@ -269,12 +269,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         Row(
           children: [
             _buildCard(size, 'Devis', Icons.euro, 1, 5, () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => Assistant()))),
+              context, MaterialPageRoute(builder: (_) => const ReceiptScreen(isEstimate: true,)))),
             SizedBox(width: size.width * 0.03),
-            // _buildCard(size, 'Factures', Icons.receipt, 89, 89, () =>Navigator.push(
-            //   context,
-            //   MaterialPageRoute(builder: (context) => const ReceiptScreen()),
-            // )),
+            _buildCard(size, 'Paramètres', Icons.settings, 89, 89, () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+            )),
           ],
         ),
         SizedBox(height: size.height * 0.02),

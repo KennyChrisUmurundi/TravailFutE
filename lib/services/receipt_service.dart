@@ -57,4 +57,20 @@ class ReceiptService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<List<dynamic>>fetchEstimates(BuildContext context) async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+      final response = await http.get(
+        Uri.parse("$apiUrl/invoice/estimates/"),
+        headers: {'Authorization': 'Token $token'},
+      );
+    logger.i("the response is ${response.body}");
+    checkInvalidTokenOrUser(context, response);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> decodedResponse = json.decode(response.body);
+      return decodedResponse['results'];
+    } else {
+      throw Exception('Failed to load receipts');
+    }
+  }
 }

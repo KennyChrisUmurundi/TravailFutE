@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
-import 'package:travail_fute/services/credential_service.dart'; // Update with your actual project name
+import 'package:travail_fute/screens/register.dart';
+import 'package:travail_fute/services/credential_service.dart';
 import 'dart:convert';
 import 'home_page.dart';
 import 'package:travail_fute/utils/logger.dart';
-// Added import for FilteringTextInputFormatter
-// import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,21 +17,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneNumberController = TextEditingController();
   final _pinController = TextEditingController();
   final CredentialService _credentialService = CredentialService();
-  bool _isLoading = false; // Add loading state
-  bool _isPhoneValid = false; // Add phone validation state
-  bool _isPinValid = false; // Add PIN validation state
+  bool _isLoading = false;
+  bool _isPhoneValid = false;
+  bool _isPinValid = false;
 
   @override
   void initState() {
     super.initState();
-    _phoneNumberController.addListener(_validatePhone); // Add listener to validate phone number
-    _pinController.addListener(_validatePin); // Add listener to validate PIN
+    _phoneNumberController.addListener(_validatePhone);
+    _pinController.addListener(_validatePin);
   }
 
   @override
   void dispose() {
-    _phoneNumberController.removeListener(_validatePhone); // Remove listener
-    _pinController.removeListener(_validatePin); // Remove listener
+    _phoneNumberController.removeListener(_validatePhone);
+    _pinController.removeListener(_validatePin);
     _phoneNumberController.dispose();
     _pinController.dispose();
     super.dispose();
@@ -52,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     setState(() {
-      _isLoading = true; // Set loading state to true
+      _isLoading = true;
     });
 
     final phone = _phoneNumberController.text;
@@ -61,24 +60,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final response = await _credentialService.login(context, phone, pin);
 
     setState(() {
-      _isLoading = false; // Set loading state to false
+      _isLoading = false;
     });
 
     if (response.statusCode == 200) {
       try {
         final responseData = jsonDecode(response.body);
-        final user = responseData['user']; // Store the user instance
-        final deviceToken = responseData['device_token']; // Store the device token
+        final user = responseData['user'];
+        final deviceToken = responseData['device_token'];
         
-        // Save user and device token in SharedPreferences
-        // final prefs = await SharedPreferences.getInstance();
-        // await prefs.setString('user', jsonEncode(user));
-        // await prefs.setString('device_token', deviceToken);
-
         logger.i('Login successful: $responseData');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage(user: user, deviceToken: deviceToken)), // Inject user and device token into HomePage
+          MaterialPageRoute(builder: (context) => HomePage(user: user, deviceToken: deviceToken)),
         );
       } catch (e) {
         _showErrorDialog('Error parsing server response: ${e.toString()}');
@@ -90,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final errorMessage = responseData['non_field_errors'] != null
             ? responseData['non_field_errors'].join(', ')
             : 'Pin ou Numero de telephone incorrect';
-        _showErrorDialog(errorMessage); // Show error dialog
+        _showErrorDialog(errorMessage);
       } catch (e) {
         _showErrorDialog('Erreur réseau ou serveur indisponible. Veuillez vérifier votre connexion et réessayer.');
       }
@@ -117,28 +111,24 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('Login'),
-      // ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: MediaQuery.of(context).viewInsets.bottom),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center, // Center the column vertically
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // Add image placeholder
                 const SizedBox(
                   width: 100,
                   height: 100,
                   child: Center(
                     child: Icon(
-                      Icons.password, // Icon
+                      Icons.password,
                       size: 50,
-                      color: kTravailFuteMainColor, // Icon color
+                      color: kTravailFuteMainColor,
                     ),
                   ),
                 ),
@@ -148,13 +138,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       TextField(
-                        controller: _phoneNumberController, // Use the phone number controller
+                        controller: _phoneNumberController,
                         keyboardType: TextInputType.number,
                         maxLength: 10,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.phone),
                           labelText: 'Entrez votre numéro de téléphone',
-                          labelStyle: const TextStyle(fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)), // Set text color
+                          labelStyle: const TextStyle(fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -164,11 +154,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _pinController,
                         keyboardType: TextInputType.number,
                         maxLength: 4,
-                        obscureText: true, // Hide the PIN input
+                        obscureText: true,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock),
                           labelText: 'Entrez un code PIN à 4 chiffres',
-                          labelStyle: const TextStyle(fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)), // Set text color
+                          labelStyle: const TextStyle(fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -178,18 +168,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-               _isLoading
-                        ? const CircularProgressIndicator(backgroundColor: kTravailFuteMainColor,color: kProgressBarInactiveColor,) // Show loading indicator
-                        : ElevatedButton(
+                _isLoading
+                    ? const CircularProgressIndicator(
+                        backgroundColor: kTravailFuteMainColor,
+                        color: kProgressBarInactiveColor,
+                      )
+                    : Column(
+                        children: [
+                          ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white, 
-                              backgroundColor: kTravailFuteMainColor, // Set text color
-                              padding:const EdgeInsets.symmetric(horizontal: 50, vertical: 15), // Increase button size
-                              textStyle: const TextStyle(fontSize: 18,fontFamily: "Poppins",fontWeight: FontWeight.bold), // Increase font size
+                              foregroundColor: Colors.white,
+                              backgroundColor: kTravailFuteMainColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                              textStyle: const TextStyle(
+                                  fontSize: 18,
+                                  fontFamily: "Poppins",
+                                  fontWeight: FontWeight.bold),
                             ),
                             child: const Text('Connexion'),
                           ),
+                          const SizedBox(height: 10),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+                              );
+                            },
+                            child: const Text(
+                              "Pas de compte? S'inscrire",
+                              style: TextStyle(color: kTravailFuteMainColor),
+                            ),
+                          ),
+                        ],
+                      ),
               ],
             ),
           ),
@@ -199,7 +212,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-
 void main() => runApp(MaterialApp(
-  home: LoginScreen(),
-));
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegistrationScreen(),
+      },
+    ));

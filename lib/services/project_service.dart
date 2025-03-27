@@ -127,13 +127,14 @@ class ProjectService{
     }
   }
 
-  Future<String> addImage(BuildContext context, String projectId, String imagePath) async {
+  Future<String> addImage(BuildContext context, String projectId, String imagePath,String caption) async {
     try {
       final url = Uri.parse("$apiUrl/project-images/");
       final token = Provider.of<TokenProvider>(context, listen: false).token;
       final request = http.MultipartRequest('POST', url)
         ..headers['Authorization'] = 'Token $token'
         ..fields['project'] = projectId
+        ..fields['caption'] = caption
         ..files.add(await http.MultipartFile.fromPath('image', imagePath));
 
       final streamedResponse = await request.send();

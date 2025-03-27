@@ -34,6 +34,7 @@ dependencies:
     speech_to_text: ^6.1.1
     path: any
     smswatcher: ^0.0.3
+    smooth_page_indicator: ^1.0.0
     flutter_sms_manager:
         path: ../flutter_sms_manager
     flutter_datetime_picker_plus: ^2.2.0
