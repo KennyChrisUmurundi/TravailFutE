@@ -10,6 +10,7 @@ import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
+import 'package:travail_fute/screens/settings_screen.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
 // import 'package:flutter_sms_manager/flutter_sms_manager.dart';
 import 'package:travail_fute/utils/logger.dart';
@@ -273,7 +274,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             SizedBox(width: size.width * 0.03),
             _buildCard(size, 'Paramètres', Icons.settings, 89, 89, () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             )),
           ],
         ),

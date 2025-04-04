@@ -150,24 +150,24 @@ class _MessageProviderScreenState extends State<MessageProviderScreen> with Sing
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildProviderCard(
-          size,
-          width,
-          'Gmail',
-          Icons.email,
-          Colors.red,
-          () => _launchGmail(),
-        ),
-        SizedBox(height: width * 0.04),
-        _buildProviderCard(
-          size,
-          width,
-          'WhatsApp Business',
-          Icons.chat,
-          Colors.green,
-          () => _launchWhatsApp(),
-        ),
-        SizedBox(height: width * 0.04),
+        // _buildProviderCard(
+        //   size,
+        //   width,
+        //   'Gmail',
+        //   Icons.email,
+        //   Colors.red,
+        //   () => _launchGmail(),
+        // ),
+        // SizedBox(height: width * 0.04),
+        // _buildProviderCard(
+        //   size,
+        //   width,
+        //   'WhatsApp Business',
+        //   Icons.chat,
+        //   Colors.green,
+        //   () => _launchWhatsApp(),
+        // ),
+        // SizedBox(height: width * 0.04),
         _buildProviderCard(
           size,
           width,
@@ -179,18 +179,18 @@ class _MessageProviderScreenState extends State<MessageProviderScreen> with Sing
             MaterialPageRoute(builder: (_) => const MessagesScreen()),
           ),
         ),
-        SizedBox(height: width * 0.04),
-        _buildProviderCard(
-          size,
-          width,
-          'Facebook',
-          Icons.facebook,
-          Colors.blue,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MessagesScreen()),
-          ),
-        ),
+        // SizedBox(height: width * 0.04),
+        // _buildProviderCard(
+        //   size,
+        //   width,
+        //   'Facebook',
+        //   Icons.facebook,
+        //   Colors.blue,
+        //   () => Navigator.push(
+        //     context,
+        //     MaterialPageRoute(builder: (_) => const MessagesScreen()),
+        //   ),
+        // ),
       ],
     );
   }

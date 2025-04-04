@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/providers/message_provider.dart';
-import 'package:travail_fute/widgets/message_card.dart'; // Add this line to import MessageCard widget
-import 'package:travail_fute/screens/message_detail_screen.dart'; // Import MessageDetailScreen
+import 'package:travail_fute/services/clients_service.dart';
+import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/widgets/message_card.dart'; 
+import 'package:travail_fute/screens/message_detail_screen.dart';
 import 'package:travail_fute/utils/logger.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -16,6 +20,7 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   static const platform = MethodChannel('sms_channel');
+  List<dynamic> clientsNumber = [];
 
   Future<void> fetchSms() async {
     final messageProvider = Provider.of<MessageProvider>(context, listen: false);
@@ -40,10 +45,30 @@ class _MessagesScreenState extends State<MessagesScreen> {
       logger.e("Failed to get SMS: '${e.message}'.");
     }
   }
+  void callClient() async {
+
+    var client = ClientService();
+    try {
+      final token = Provider.of<TokenProvider>(context, listen: false).token;
+      var responseData = await client.getClientList(context, token: token); 
+
+      setState(() {
+        for (var i in responseData) {
+          clientsNumber.add(i['phone_number']);  
+        }
+         // Reset on initial load
+         });
+      logger.i('Client List: $clientsNumber');
+    } catch (e) {
+      logger.d('Error in callClient: $e');
+    } finally {
+    }
+  }
   
   @override
   void initState() {
     fetchSms();
+    callClient();
     super.initState();
   }
   @override
@@ -60,6 +85,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
           for (var message in messages) {
+            logger.i("Message: ${message['address']}");
             final sender = message['address'] ?? 'Unknown';
             if (!groupedMessages.containsKey(sender)) {
               groupedMessages[sender] = [];
@@ -92,6 +118,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               final sender = sortedSenders[index];
               final messagesFromSender = groupedMessages[sender]!;
               logger.i("Messages from $sender: $messagesFromSender");
+              logger.i("CLient List: $sender");
               
               // Get the latest message
               final latestMessage = messagesFromSender.first;
@@ -103,6 +130,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 subtitle: latestMessage['body'] != null 
                     ? latestMessage['body']!.substring(0, latestMessage['body']!.length > 16 ? 16 : latestMessage['body']!.length)
                     : '',
+                addClient: !clientsNumber.contains(sender.replaceAll(' ', '')),
                 trailing: DateFormat('d MMM').format(dateFormat.parse(latestMessage['formattedDate']!)),
                 onTap: () {
                   // Navigate to message detail screen
@@ -113,6 +141,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         sentMessages: messagesFromSender.where((msg) => msg['type'] == 'sent').toList().cast<Map<String, String>>(),
                         receivedMessages: messagesFromSender.where((msg) => msg['type'] == 'received').toList().cast<Map<String, String>>(),
                         sender: sender,
+                        
                       ),
                     ),
                   );

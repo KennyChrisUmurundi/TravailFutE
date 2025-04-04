@@ -9,8 +9,8 @@ void showReminderDialog({
   required TextEditingController textController,
   required DateTime selectedDateTime,
   required String sender,
-  required dynamic notificationService, // Replace with your actual service type
-  required dynamic notification, // Replace with your actual notification type
+  required dynamic notificationService, 
+  required dynamic notification, 
   // required dynamic dt_picker, // Replace with your date picker type
 }) {
   showGeneralDialog(

@@ -55,13 +55,15 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
       minTime: DateTime.now(),
       maxTime: DateTime.now().add(const Duration(days: 365 * 5)),
       onConfirm: (date) {
-        setState(() {
-          if (isStart) {
-            _startDate = date;
-          } else {
-            _endDate = date;
-          }
-        });
+        if (mounted){
+          setState(() {
+            if (isStart) {
+              _startDate = date;
+            } else {
+              _endDate = date;
+            }
+          });
+        }
       },
       currentTime: isStart ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
       locale: dt_picker.LocaleType.fr,
@@ -69,7 +71,14 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> with SingleTi
   }
 
   Future<void> _submitProject() async {
-    if (_nameController.text.isEmpty || _startDate == null) {
+    if (_startDate == null){
+      if (mounted){
+          setState(() {
+            _startDate = DateTime.now();
+          });
+        }
+    }
+    if (_nameController.text.isEmpty || _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
       );

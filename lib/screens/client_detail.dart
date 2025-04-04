@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/providers/message_provider.dart';
 import 'package:travail_fute/screens/create_project_screen.dart';
+import 'package:travail_fute/screens/message_detail_screen.dart';
 import 'package:travail_fute/screens/new_estimate_screen.dart';
 import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/services/clients_service.dart';
 import 'package:travail_fute/services/invoice_service.dart';
+import 'package:travail_fute/services/notification_service.dart';
 import 'package:travail_fute/services/project_service.dart';
 import 'package:travail_fute/services/receipt_service.dart';
+import 'package:travail_fute/utils/func.dart';
+import 'package:travail_fute/utils/noti.dart';
+import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/widgets/dialog.dart';
 import 'package:travail_fute/widgets/main_card.dart';
 import 'package:travail_fute/screens/edit_client.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,9 +41,13 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
   List<dynamic> projects = [];
   List<dynamic> bills = [];
   List<dynamic> estimates = [];
+  List<Map<String, String>> sentMessages = [];
+  List<Map<String, String>> receivedMessages = [];
   bool isBillsLoading = false;
   bool isProjectsLoading = false;
   bool isEstimatesLoading = false;
+  
+  
 
   @override
   void initState() {
@@ -108,6 +121,57 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
     }
   }
 
+Future<void> fetchSms({required String senderNumber}) async {
+  const platform = MethodChannel('sms_channel');
+  try {
+    final List<dynamic> result = await platform.invokeMethod('getSms');
+    
+    // Convert all messages to Map<String, String>
+    final List<Map<String, String>> allMessages = result
+        .map((item) => Map<String, dynamic>.from(item))
+        .map((message) => message.map((key, value) => MapEntry(key, value.toString())))
+        .toList();
+
+    // Filter messages by type and sender
+    // If the sender number starts with +32, replace it with 0
+    final String normalizedSenderNumber = senderNumber.startsWith('+32')
+      ? '0${senderNumber.substring(3)}'
+      : senderNumber;
+
+    // Filter messages using the normalized number
+    final List<Map<String, String>> sentMessages = allMessages.where((msg) {
+      return msg['type'] == 'sent' && 
+            (msg['address']?.contains(senderNumber) ?? false);
+    }).toList();
+
+    final List<Map<String, String>> receivedMessages = allMessages.where((msg) {
+      return msg['type'] == 'received' && 
+            (msg['address']?.contains(senderNumber) ?? false);
+    }).toList();
+
+    final List<Map<String, String>> draftMessages = allMessages.where((msg) {
+      return msg['type'] == 'draft' && 
+            (msg['address']?.contains(senderNumber) ?? false);
+    }).toList();
+    setState(() {
+      this.sentMessages = sentMessages;
+      this.receivedMessages = receivedMessages;
+    });
+
+    logger.i('''
+      Messages from $senderNumber:
+      - Sent: ${sentMessages.length}
+      - Received: ${receivedMessages.length}
+      - Drafts: ${draftMessages.length}
+    ''');
+
+    
+  
+  } on PlatformException catch (e) {
+    logger.e("Failed to get SMS: '${e.message}'.");
+  }
+}
+
   fetchClientInvoices() async {
     try {
       final value = await InvoiceService().fetchEstimatesByClient(context, id:widget.client['id'].toString());
@@ -132,7 +196,6 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
     final size = MediaQuery.of(context).size;
     final width = size.width;
     
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -218,7 +281,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
     );
     final fullName = '${widget.client['first_name'] ?? ''} ${widget.client['last_name'] ?? ''}'.trim();
     final address = '${widget.client['address_street'] ?? ''}, ${widget.client['address_town'] ?? ''} ${widget.client['postal_code'] ?? ''}'.trim();
-
+    final String name = checkUtf8(fullName);
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Card(
@@ -239,15 +302,16 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                 ),
               ),
               SizedBox(height: width * 0.04),
-              Text(
-                fullName.isNotEmpty ? fullName : 'Nom inconnu',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: width * 0.06,
-                  fontWeight: FontWeight.w700,
-                  color: kTravailFuteSecondaryColor,
-                ),
-                textAlign: TextAlign.center,
+              
+                Text(
+                  name.isNotEmpty ? fullName : 'Nom inconnu',
+                  style: TextStyle(
+                    fontFamily: 'Poppins', // Or 'Arial', 'Helvetica', etc.
+                    fontSize: width * 0.06,
+                    fontWeight: FontWeight.w700,
+                    color: kTravailFuteSecondaryColor,
+                  ),
+                  textAlign: TextAlign.center,
               ),
               SizedBox(height: width * 0.015),
               Text(
@@ -377,7 +441,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                       Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ReceiptScreen(bills: estimates,isEstimate: true),
+                        builder: (context) => ReceiptScreen(bills: estimates,isEstimate: true,client: widget.client,),
                       ),
                     );
                       } finally {
@@ -407,7 +471,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ReceiptScreen(bills: bills,isEstimate: false),
+                          builder: (context) => ReceiptScreen(bills: bills,isEstimate: false,client:widget.client),
                         ),
                       );
                   }
@@ -447,7 +511,7 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                       if (mounted) setState(() => isBillsLoading = false);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ProjectScreen(projects: projects)),
+                        MaterialPageRoute(builder: (_) => ProjectScreen(projects: projects,client: widget.client,)),
                       );
                     } finally {
                       if (mounted) setState(() => isProjectsLoading = false);
@@ -465,9 +529,23 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
               Expanded(
                 child: MainCard(
                   size,
-                  onPress: () {},
-                  label: 'Gestion',
-                  icon: Icons.folder,
+                  onPress: () async{
+                    
+                    await fetchSms(senderNumber: widget.client['phone_number']);
+                    logger.i('Sent Messages: $receivedMessages');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MessageDetailScreen(
+                          sentMessages: sentMessages,
+                          receivedMessages: receivedMessages,
+                          sender: widget.client['phone_number'],
+                        ),
+                      ),
+                    );
+                  },
+                  label: 'Sms Client',
+                  icon: Icons.message,
                   value: 1,
                   completed: 5,
                   cardColor: kTravailFuteMainColor,
@@ -608,6 +686,30 @@ class _ClientDetailState extends State<ClientDetail> with SingleTickerProviderSt
                           context,
                           MaterialPageRoute(builder: (context) => EditClient(client: widget.client)),
                         );
+                      },
+                    ),
+                    SizedBox(height: width * 0.04),
+                    _buildActionOption(
+                      context: context,
+                      width: width,
+                      icon: Icons.notification_add,
+                      label: 'Nouvelle Notification',
+                      color: const Color.fromARGB(255, 58, 148, 233),
+                      onTap: () {
+                        var token = Provider.of<TokenProvider>(context,listen: false).token;
+                        NotificationService notificationService = NotificationService(deviceToken: token);
+                        TextEditingController textController = TextEditingController();
+                        DateTime selectedDateTime = DateTime.now().add(Duration(seconds: 10));
+                         var notification = Noti();
+                        showReminderDialog(
+                          context: context,
+                          textController: textController,
+                          selectedDateTime: selectedDateTime,
+                          sender: widget.client['phone_number'],
+                          notificationService: notificationService,
+                          notification: notification,
+                        );
+                        // Navigator.pop(context);
                       },
                     ),
                     SizedBox(height: width * 0.04),

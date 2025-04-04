@@ -127,6 +127,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   fontSize: width * 0.05,
                   fontWeight: FontWeight.bold,
                   color: kWhiteColor,
+                  fontFamily: 'NotoSans',
                 ),
               ),
             ),
@@ -218,7 +219,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     style: TextStyle(
                       fontSize: width * 0.035,
                       color: Colors.grey[600],
+                      fontFamily: 'Roboto',
                     ),
+                    locale: const Locale('fr', 'FR'),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -226,7 +229,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   Row(
                     children: [
                       Text(
-                        'Time: ${notifications[index]['due_time']}',
+                        'Heure: ${notifications[index]['due_time']}',
                         style: TextStyle(
                           fontSize: width * 0.03,
                           color: Colors.grey[500],

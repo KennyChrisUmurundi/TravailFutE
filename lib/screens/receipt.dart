@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/clients.dart';
+import 'package:travail_fute/screens/new_estimate_screen.dart';
 import 'package:travail_fute/screens/new_invoice_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:travail_fute/screens/pdf_viewer_screen.dart';
@@ -11,8 +12,9 @@ import 'package:travail_fute/utils/logger.dart';
 
 class ReceiptScreen extends StatefulWidget {
   final List<dynamic>? bills;
+  final Map<String, dynamic>? client;
   final bool isEstimate;
-  const ReceiptScreen({super.key,this.bills,this.isEstimate = false});
+  const ReceiptScreen({super.key,this.client,this.bills,this.isEstimate = false});
 
   @override
   State<ReceiptScreen> createState() => _ReceiptScreenState();
@@ -85,14 +87,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProvider
     }
   }
 
-  void _navigateToNewInvoice() {
-    Navigator.push(
+  _navigateToNewInvoice() {
+  logger.d("Navigating to new invoice/estimate screen");
+  
+  if (widget.client != null) {
+    return Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ClientsList(),
+        builder: (context) => widget.isEstimate
+            ? NewEstimateScreen(client: widget.client!)
+            : NewInvoiceScreen(client: widget.client!),
       ),
     );
   }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => ClientsList()),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

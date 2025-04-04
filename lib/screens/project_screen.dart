@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/clients.dart';
+import 'package:travail_fute/screens/create_project_screen.dart';
 // New screen for creation
 import 'package:travail_fute/screens/project_detail_screen.dart';
 // import 'package:http/http.dart' as http;
@@ -12,8 +13,9 @@ import 'package:travail_fute/utils/provider.dart';
 
 class ProjectScreen extends StatefulWidget {
   final List<dynamic>? projects;
+  final Map<String, dynamic>? client;
 
-  const ProjectScreen({super.key, this.projects});
+  const ProjectScreen({super.key, this.projects,this.client});
 
   @override
   State<ProjectScreen> createState() => _ProjectScreenState();
@@ -46,19 +48,22 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
   }
 
   Future<void> fetchProjects() async {
-    setState(() => isLoading = true);
-    projectService.fetchProjects(context).then((value) {
+    if (mounted){
+      setState(() => isLoading = true);
+      projectService.fetchProjects(context).then((value) {
       setState(() {
         projects = widget.projects ?? value;
         isLoading = false;
       });
-    }).catchError((error) {
+      }).catchError((error) {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Échec du chargement des projets : $error'),
         backgroundColor: Colors.red,
       ));
     });
+    }
+    
   }
 
   @override
@@ -89,7 +94,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
           ),
         ),
       ),
-      floatingActionButton: _buildFAB(width),
+      floatingActionButton: widget.client!= null ? _buildFAB(width): null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
@@ -304,7 +309,7 @@ class _ProjectScreenState extends State<ProjectScreen> with SingleTickerProvider
     return FloatingActionButton(
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) =>  ClientsList()),
+        MaterialPageRoute(builder: (context) => CreateProjectScreen(user: widget.client)),
       ),
       backgroundColor: kTravailFuteMainColor,
       elevation: 8,
