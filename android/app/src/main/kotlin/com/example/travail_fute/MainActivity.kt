@@ -1,6 +1,7 @@
 package com.example.travail_fute
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Telephony
@@ -18,6 +19,17 @@ class MainActivity : FlutterActivity() {
     private val REQUEST_CODE_SMS_PERMISSION = 1
     private var resultCallback: MethodChannel.Result? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleSharedIntent(intent) // Handle share intent on activity creation
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleSharedIntent(intent) // Handle share intent when app is already running
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
@@ -32,8 +44,48 @@ class MainActivity : FlutterActivity() {
                         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_SMS), REQUEST_CODE_SMS_PERMISSION)
                     }
                 }
+                else -> result.notImplemented()
             }
         }
+    }
+
+    private fun handleSharedIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+            if (sharedText != null) {
+                val (phoneNumber, messageBody) = parseSharedText(sharedText)
+                val finalPhoneNumber = phoneNumber ?: if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
+                    findPhoneNumberByBody(messageBody)
+                } else null
+
+                val smsData = mapOf(
+                    "phoneNumber" to (finalPhoneNumber ?: "Unknown"),
+                    "body" to messageBody
+                )
+                MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, SMS_CHANNEL)
+                    .invokeMethod("onSmsShared", smsData)
+            }
+        }
+    }
+
+    private fun parseSharedText(sharedText: String): Pair<String?, String> {
+        // Try to parse "From: [number]" format
+        val fromPattern = Regex("From: ([+]?[0-9\\-\\s]+)(?:\n\n|\n)(.*)", RegexOption.DOT_MATCHES_ALL)
+        val match = fromPattern.find(sharedText)
+        return if (match != null) {
+            val phoneNumber = match.groups[1]?.value?.trim()
+            val messageBody = match.groups[2]?.value?.trim() ?: sharedText
+            Pair(phoneNumber, messageBody)
+        } else {
+            Pair(null, sharedText) // Assume entire text is body if no "From: " found
+        }
+    }
+
+    private fun findPhoneNumberByBody(body: String): String? {
+        val allSms = getSms()
+        // Match the body exactly or partially (trimmed for robustness)
+        val trimmedBody = body.trim()
+        return allSms.find { (it["body"] as String).trim() == trimmedBody }?.get("address") as? String
     }
 
     private fun getSms(): List<Map<String, Any>> {
@@ -78,21 +130,21 @@ class MainActivity : FlutterActivity() {
 
         val draftCursor = contentResolver.query(Telephony.Sms.Draft.CONTENT_URI, null, null, null, Telephony.Sms.DEFAULT_SORT_ORDER)
         draftCursor?.use {
-        val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
-        val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
-        val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
+            val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
+            val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
+            val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
 
-        while (it.moveToNext()) {
-            val dateMillis = it.getLong(indexDate)
-            val sms = mapOf(
-                "address" to it.getString(indexAddress),
-                "body" to it.getString(indexBody),
-                "type" to "draft",
-                "date" to dateMillis
-            )
-            smsList.add(sms)
+            while (it.moveToNext()) {
+                val dateMillis = it.getLong(indexDate)
+                val sms = mapOf(
+                    "address" to it.getString(indexAddress),
+                    "body" to it.getString(indexBody),
+                    "type" to "draft",
+                    "date" to dateMillis
+                )
+                smsList.add(sms)
+            }
         }
-    }
 
         // Sort by date in ascending order
         smsList.sortBy { it["date"] as Long }
@@ -111,6 +163,7 @@ class MainActivity : FlutterActivity() {
                 } else {
                     resultCallback?.error("PERMISSION_DENIED", "SMS permission denied", null)
                 }
+                resultCallback = null // Clear callback after use
             }
         }
     }

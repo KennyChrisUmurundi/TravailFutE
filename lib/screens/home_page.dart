@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:smswatcher/smswatcher.dart';
+// import 'package:smswatcher/smswatcher.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:travail_fute/screens/assistant.dart';
 import 'package:travail_fute/screens/client_create.dart';
-import 'package:travail_fute/screens/message_provider_screen.dart';
+// import 'package:travail_fute/screens/message_provider_screen.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
+import 'package:travail_fute/screens/settings_screen.dart';
 import 'package:travail_fute/services/phone_state_service.dart';
 // import 'package:flutter_sms_manager/flutter_sms_manager.dart';
-import 'package:travail_fute/utils/logger.dart';
+// import 'package:travail_fute/utils/logger.dart';
+import 'package:travail_fute/widgets/botom_nav.dart';
 import 'clients.dart';
 
 class HomePage extends StatefulWidget {
@@ -110,8 +112,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ),
       ),
       // bottomNavigationBar: BottomNavBar(
-      //   onMenuPressed: () {},
-      //   backgroundColor: Colors.white.withOpacity(0.95),
       // ),
       // floatingActionButton: _buildFAB(),
       // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -248,9 +248,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               onAddPress: () => Navigator.push(
                 context, MaterialPageRoute(builder: (_) => ClientCreatePage())),
             ),
-            SizedBox(width: size.width * 0.03),
-            _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const MessageProviderScreen()))),
+            // SizedBox(width: size.width * 0.03),
+            // _buildCard(size, 'Messages', Icons.message, 1, 5, () => Navigator.push(
+            //   context, MaterialPageRoute(builder: (_) => const MessageProviderScreen()))),
           ],
         ),
         SizedBox(height: size.height * 0.02),
@@ -273,7 +273,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             SizedBox(width: size.width * 0.03),
             _buildCard(size, 'Paramètres', Icons.settings, 89, 89, () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             )),
           ],
         ),

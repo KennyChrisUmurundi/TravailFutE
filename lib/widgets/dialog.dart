@@ -200,7 +200,7 @@ class _ReminderDialogState extends State<_ReminderDialog> with SingleTickerProvi
                 maxLines: 5,
                 style: TextStyle(fontSize: width * 0.04),
                 decoration: InputDecoration(
-                  labelText: 'Votre rappel',
+                  labelText: '💥💥',
                   labelStyle: TextStyle(color: Colors.grey[600]),
                   filled: true,
                   fillColor: Colors.grey[100],
