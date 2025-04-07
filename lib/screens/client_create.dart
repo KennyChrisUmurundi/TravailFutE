@@ -216,7 +216,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Nom',
                   icon: Icons.person,
                   isValid: _validationStates['Nom']!,
-                  errorMessage: _errorMessages['Nom']!,
+                  // errorMessage: _errorMessages['Nom']!,
                   animation: _animation,
                   onChanged: (value) => _validateField('Nom', value),
                 ),
@@ -225,7 +225,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Prénom',
                   icon: Icons.person,
                   isValid: _validationStates['Prénom']!,
-                  errorMessage: _errorMessages['Prénom']!,
+                  // errorMessage: _errorMessages['Prénom']!,
                   animation: _animation,
                   onChanged: (value) => _validateField('Prénom', value),
                 ),
@@ -234,7 +234,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Téléphone *',
                   icon: Icons.phone,
                   isValid: _validationStates['Téléphone']!,
-                  errorMessage: _errorMessages['Téléphone']!,
+                  // errorMessage: _errorMessages['Téléphone']!,
                   animation: _animation,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -247,7 +247,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Email',
                   icon: Icons.email,
                   isValid: _validationStates['Email']!,
-                  errorMessage: _errorMessages['Email']!,
+                  // errorMessage: _errorMessages['Email']!,
                   animation: _animation,
                   onChanged: (value) => _validateField('Email', value),
                 ),
@@ -256,7 +256,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Rue',
                   icon: Icons.location_on,
                   isValid: _validationStates['Rue']!,
-                  errorMessage: _errorMessages['Rue']!,
+                  // errorMessage: _errorMessages['Rue']!,
                   animation: _animation,
                   onChanged: (value) => _validateField('Rue', value),
                 ),
@@ -265,7 +265,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Ville',
                   icon: Icons.location_city,
                   isValid: _validationStates['Ville']!,
-                  errorMessage: _errorMessages['Ville']!,
+                  // errorMessage: _errorMessages['Ville']!,
                   animation: _animation,
                   onChanged: (value) => _validateField('Ville', value),
                 ),
@@ -274,7 +274,7 @@ class _ClientCreatePageState extends State<ClientCreatePage> with SingleTickerPr
                   label: 'Code Postal',
                   icon: Icons.local_post_office,
                   isValid: _validationStates['Code Postal']!,
-                  errorMessage: _errorMessages['Code Postal']!,
+                  // errorMessage: _errorMessages['Code Postal']!,
                   animation: _animation,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -342,7 +342,7 @@ class ModernTextField extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isValid;
-  final String errorMessage;
+  // final String errorMessage;
   final Animation<double> animation;
   final ValueChanged<String?>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
@@ -353,7 +353,7 @@ class ModernTextField extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.isValid,
-    required this.errorMessage,
+    // required this.errorMessage,
     required this.animation,
     this.onChanged,
     this.inputFormatters,
@@ -380,12 +380,12 @@ class ModernTextField extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
               prefixIcon: Icon(icon, color: kTravailFuteMainColor, size: 22),
-              suffixIcon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: isValid
-                    ? Icon(Icons.check_circle, color: Colors.green, key: ValueKey('valid-$name'))
-                    : Icon(Icons.error_outline, color: Colors.red, key: ValueKey('invalid-$name')),
-              ),
+              // suffixIcon: AnimatedSwitcher(
+              //   duration: const Duration(milliseconds: 200),
+              //   child: isValid
+              //       ? Icon(Icons.check_circle, color: Colors.green, key: ValueKey('valid-$name'))
+              //       : Icon(Icons.error_outline, color: Colors.red, key: ValueKey('invalid-$name')),
+              // ),
               filled: true,
               fillColor: Colors.white.withOpacity(0.9),
               border: OutlineInputBorder(
@@ -421,14 +421,14 @@ class ModernTextField extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4, left: 16),
               child: FadeTransition(
                 opacity: animation,
-                child: Text(
-                  errorMessage,
-                  style: TextStyle(
-                    color: Colors.red[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                // child: Text(
+                //   errorMessage,
+                //   style: TextStyle(
+                //     color: Colors.red[700],
+                //     fontSize: 12,
+                //     fontWeight: FontWeight.w400,
+                //   ),
+                // ),
               ),
             ),
         ],

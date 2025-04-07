@@ -22,6 +22,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _isPhoneValid = false;
   bool _isPinValid = false;
   bool _isPinMatch = false;
+  bool _acceptedTerms = false;
 
   @override
   void initState() {
@@ -63,35 +64,114 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     });
   }
 
+  void _showTermsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terms and Conditions'),
+        content: SingleChildScrollView(
+          child: Column(
+            children: const [
+              Text('''Conditions Générales d’Utilisation de Travail Futé
+
+Dernière mise à jour : 4 avril 2025
+
+Bienvenue sur Travail Futé, une application mobile gratuite et non monétisée conçue pour aider les utilisateurs à gérer leurs tâches quotidiennes, leurs clients, leurs projets et leurs notifications. En téléchargeant, installant ou utilisant Travail Futé (l’"Application"), vous acceptez d’être lié par ces Conditions Générales d’Utilisation ("Conditions"). Si vous n’acceptez pas ces Conditions, veuillez ne pas utiliser l’Application.
+1. Acceptation des Conditions
+
+Ces Conditions constituent un accord juridique entre vous ("Utilisateur" ou "vous") et le développeur de Travail Futé ("Développeur", "nous" ou "notre"). Nous nous réservons le droit de mettre à jour ces Conditions à tout moment, les modifications prenant effet dès leur publication dans l’Application ou sur un site associé. Votre utilisation continue de l’Application après ces mises à jour signifie votre acceptation des Conditions révisées.
+2. Objectif et Nature Non Monétisée
+
+Travail Futé est fourni gratuitement pour un usage personnel et professionnel afin d’aider à la gestion des tâches, au suivi des clients, à l’organisation des projets et aux notifications. L’Application n’est pas monétisée, ce qui signifie que nous ne facturons pas de frais, n’affichons pas de publicités et ne générons pas de revenus par son utilisation. Elle est proposée comme un projet personnel pour votre commodité et utilité, sans garantie de performance de niveau commercial.
+3. Éligibilité
+
+Vous devez avoir au moins 13 ans pour utiliser l’Application. En utilisant Travail Futé, vous déclarez remplir cette condition d’âge et avoir la capacité juridique d’accepter ces Conditions.
+4. Licence d’Utilisation
+
+Nous vous accordons une licence non exclusive, non transférable et révocable pour utiliser l’Application à des fins personnelles et non commerciales, sous réserve de ces Conditions. Vous ne devez pas :
+
+    Modifier, désassembler, décompiler ou effectuer une ingénierie inverse de l’Application.
+    Distribuer, vendre, sous-licencier ou commercialiser l’Application de quelque manière que ce soit.
+    Utiliser l’Application d’une manière qui enfreint les lois applicables ou ces Conditions.
+
+5. Responsabilités de l’Utilisateur
+
+Vous êtes responsable de :
+
+    Maintenir la sécurité de votre appareil et des données saisies dans l’Application.
+    Accorder les autorisations nécessaires (par exemple, SMS, état du téléphone) pour que l’Application fonctionne comme prévu. Le refus de ces autorisations peut limiter les fonctionnalités.
+    Vous assurer que votre utilisation de l’Application respecte toutes les lois locales, nationales et internationales.
+
+6. Autorisations et Données
+
+Travail Futé peut demander des autorisations pour accéder aux SMS, à l’état du téléphone ou à d’autres fonctionnalités de votre appareil afin d’offrir des services comme la surveillance des appels ou les notifications. Nous ne collectons, ne stockons ni ne transmettons ces données à des serveurs externes, sauf si cela est explicitement requis pour les fonctionnalités de l’Application (par exemple, appels API vers vos services). Toutes les données traitées restent sur votre appareil, et nous ne sommes pas responsables de leur sécurité ou de leur sauvegarde.
+7. Services Tiers
+
+L’Application peut s’intégrer à des services tiers (par exemple, des API pour la gestion de projets ou de reçus). Vous êtes responsable de vos interactions avec ces services, y compris le respect de leurs conditions et de tout coût associé. Nous ne sommes pas responsables de la performance, de la disponibilité ou de la sécurité des services tiers.
+8. Absence de Garantie
+
+Travail Futé est fourni "tel quel" et "tel que disponible", sans aucune garantie, expresse ou implicite, y compris, mais sans s’y limiter, l’adéquation à un usage particulier, la qualité marchande ou l’absence de contrefaçon. Nous ne garantissons pas :
+
+    Que l’Application sera exempte d’erreurs, ininterrompue ou sécurisée.
+    L’exactitude, la fiabilité ou l’exhaustivité des informations fournies par l’Application.
+    La compatibilité avec tous les appareils ou systèmes d’exploitation.
+
+9. Limitation de Responsabilité
+
+Dans la mesure maximale permise par la loi, le Développeur ne sera pas responsable des dommages directs, indirects, accessoires, spéciaux, consécutifs ou exemplaires découlant de votre utilisation de l’Application, y compris, mais sans s’y limiter, la perte de données, de profits ou d’opportunités commerciales. En tant qu’application non monétisée, vous utilisez l’Application à vos propres risques, et nous n’assumons aucune responsabilité pour tout préjudice ou perte résultant de son utilisation.
+10. Indemnisation
+
+Vous acceptez d’indemniser, de défendre et de dégager de toute responsabilité le Développeur contre toute réclamation, tout dommage, toute perte ou toute dépense (y compris les frais juridiques) découlant de votre utilisation de l’Application, de la violation de ces Conditions ou de l’atteinte aux droits d’un tiers.
+11. Résiliation
+
+Nous pouvons résilier ou suspendre votre accès à l’Application à tout moment, sans préavis ni responsabilité, pour quelque raison que ce soit, y compris en cas de violation de ces Conditions. En cas de résiliation, votre droit d’utiliser l’Application cesse immédiatement.
+12. Propriété Intellectuelle
+
+Tout le contenu, le design et le code de Travail Futé sont la propriété intellectuelle du Développeur ou nous sont licenciés. Vous ne pouvez pas reproduire, distribuer ou créer des œuvres dérivées de l’Application sans notre consentement écrit préalable.
+13. Confidentialité
+
+Travail Futé ne collecte pas de données personnelles à des fins de monétisation ou de partage. Toutes les données que vous saisissez (par exemple, détails des clients, informations sur les projets) sont stockées localement sur votre appareil. Nous ne sommes pas responsables de la perte de données, des violations de sécurité ou de l’accès non autorisé à votre appareil. Pour les fonctionnalités nécessitant une connexion internet (par exemple, appels API), consultez les politiques de confidentialité des services tiers concernés.
+14. Loi Applicable
+
+Ces Conditions sont régies par les lois de la France, sans égard aux principes de conflit de lois. Tout litige sera résolu devant les tribunaux compétents en France.
+15. Contactez-Nous
+
+Si vous avez des questions concernant ces Conditions, contactez-nous à l’adresse [Insérez votre email, par exemple, "support@travailfute.com"]. Étant un projet non monétisé, les délais de réponse peuvent varier.
+16. Accord Intégral
+
+Ces Conditions constituent l’accord complet entre vous et le Développeur concernant l’utilisation de Travail Futé, remplaçant tout accord ou entendement préalable.'''),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _register() async {
-    if (!_isPhoneValid || !_isPinValid || !_isPinMatch) {
-      _showErrorDialog('Veuillez remplir correctement tous les champs');
+    if (!_isPhoneValid || !_isPinValid || !_isPinMatch || !_acceptedTerms) {
+      _showErrorDialog('Please fill all fields correctly and accept terms');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final username = _usernameController.text;
-    final phone = _phoneNumberController.text;
-    final pin = _pinController.text;
-  
+    setState(() => _isLoading = true);
 
     try {
       final response = await _credentialService.register(
         context,
-        username,
-        phone,
-        pin,
+        _usernameController.text,
+        _phoneNumberController.text,
+        _pinController.text,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
-      logger.i('Registration response: ${response.body}');
+      setState(() => _isLoading = false);
+      
       if (response.statusCode == 201) {
-        logger.i('Registration successful');
         _showSuccessDialog();
       } else {
         final responseData = jsonDecode(response.body);
@@ -101,16 +181,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           errorMessage = responseData['non_field_errors'].join(', ');
         } else if (responseData['phone_number'] != null) {
           errorMessage = responseData['phone_number'].join(', ');
-        } else if (responseData.containsKey('detail')) {
-          errorMessage = responseData['detail'];
         }
         
         _showErrorDialog(errorMessage);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       _showErrorDialog('Network error: ${e.toString()}');
     }
   }
@@ -118,42 +194,38 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-            title: const Text('Échec de l\'inscription'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text('Registration Failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showSuccessDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-            title: const Text('Inscription réussie'),
-            content: const Text('Compte créé avec succès ! Veuillez vous connecter.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text('Registration Successful'),
+        content: const Text('Account created successfully! Please login.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -163,117 +235,108 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: 16.0, vertical: MediaQuery.of(context).viewInsets.bottom),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: Center(
-                    child: Icon(
-                      Icons.person_add,
-                      size: 50,
-                      color: kTravailFuteMainColor,
+              children: [
+                const Icon(Icons.person_add, size: 80, color: kTravailFuteMainColor),
+                const SizedBox(height: 30),
+                _buildInputField(
+                  controller: _usernameController,
+                  icon: Icons.person,
+                  label: 'Username',
+                ),
+                const SizedBox(height: 15),
+                _buildInputField(
+                  controller: _phoneNumberController,
+                  icon: Icons.phone,
+                  label: 'Phone Number',
+                  keyboardType: TextInputType.phone,
+                  maxLength: 10,
+                ),
+                const SizedBox(height: 15),
+                _buildInputField(
+                  controller: _pinController,
+                  icon: Icons.lock,
+                  label: '4-digit PIN',
+                  obscureText: true,
+                  maxLength: 4,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 15),
+                _buildInputField(
+                  controller: _pin2Controller,
+                  icon: Icons.lock_outline,
+                  label: 'Confirm PIN',
+                  obscureText: true,
+                  maxLength: 4,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _acceptedTerms,
+                      onChanged: (value) => setState(() => _acceptedTerms = value ?? false),
+                      activeColor: kTravailFuteMainColor,
                     ),
-                  ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: _showTermsDialog,
+                        child: const Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'I agree to the ',
+                                style: TextStyle(color: Colors.black87),
+                              ),
+                              TextSpan(
+                                text: 'Terms and Conditions',
+                                style: TextStyle(
+                                  color: kTravailFuteMainColor,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.person),
-                            labelText: 'Entrez un nom d\'utilisateur',
-                          labelStyle: const TextStyle(
-                              fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _phoneNumberController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 10,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.phone),
-                            labelText: 'Entrez votre numéro de téléphone',
-                          labelStyle: const TextStyle(
-                              fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      TextField(
-                        controller: _pinController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock),
-                            labelText: 'Entrez un code PIN à 4 chiffres',
-                          labelStyle: const TextStyle(
-                              fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      TextField(
-                        controller: _pin2Controller,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock),
-                            labelText: 'Confirmez le code PIN à 4 chiffres',
-                          labelStyle: const TextStyle(
-                              fontSize: 10, color: Color.fromARGB(255, 119, 111, 111)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
                 _isLoading
-                    ? const CircularProgressIndicator(
-                        backgroundColor: kTravailFuteMainColor,
-                        color: kProgressBarInactiveColor,
-                      )
-                    : ElevatedButton(
-                        onPressed: _register,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: kTravailFuteMainColor,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 50, vertical: 15),
-                          textStyle: const TextStyle(
+                    ? const CircularProgressIndicator(color: kTravailFuteMainColor)
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: (_isPhoneValid && _isPinValid && _isPinMatch && _acceptedTerms)
+                              ? _register
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kTravailFuteMainColor,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text(
+                            'REGISTER',
+                            style: TextStyle(
                               fontSize: 18,
-                              fontFamily: "Poppins",
-                              fontWeight: FontWeight.bold),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                          ),
                         ),
-                        child: const Text('S\'inscrire'),
                       ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    );
-                  },
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  ),
                   child: const Text(
-                    'Vous avez déjà un compte? Connectez-vous',
+                    'Already have an account? Login here',
                     style: TextStyle(color: kTravailFuteMainColor),
                   ),
                 ),
@@ -284,13 +347,32 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
     );
   }
-}
 
-// Update your main function to include both screens
-void main() => runApp(MaterialApp(
-      initialRoute: '/register',
-      routes: {
-        '/register': (context) => const RegistrationScreen(),
-        '/login': (context) => const LoginScreen(),
-      },
-    ));
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required IconData icon,
+    required String label,
+    bool obscureText = false,
+    int? maxLength,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      maxLength: maxLength,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: kTravailFuteMainColor),
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kTravailFuteMainColor, width: 2),
+        ),
+      ),
+    );
+  }
+}

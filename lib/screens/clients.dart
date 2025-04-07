@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/client_create.dart';
 import 'package:travail_fute/utils/provider.dart';
+import 'package:travail_fute/widgets/botom_nav.dart';
 import 'package:travail_fute/widgets/client_card.dart';
 import 'package:travail_fute/services/clients_service.dart';
 
@@ -164,6 +165,8 @@ class _ClientsListState extends State<ClientsList> with SingleTickerProviderStat
           ),
         ),
       ),
+      // bottomNavigationBar: BottomNavBar(
+      // ),
       floatingActionButton: _buildFAB(width),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

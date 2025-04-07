@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+`import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
+import 'package:travail_fute/screens/condition_screen.dart';
 import 'package:travail_fute/screens/information_screen.dart';
 import 'package:travail_fute/screens/services_screen.dart';
 
@@ -78,7 +79,16 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: size.height * 0.03),
-                    // Add more options here as needed
+                    _buildSettingsOption(
+                      context,
+                      title: 'Conditions d\'Utilisation',
+                      icon: Icons.article_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ConditionsScreen()),
+                      ),
+                    ),
+                    SizedBox(height: size.height * 0.03),
                   ],
                 ),
               ),
@@ -149,4 +159,4 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-}
+}`
