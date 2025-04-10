@@ -21,13 +21,13 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleSharedIntent(intent) // Handle share intent on activity creation
+        handleSharedIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleSharedIntent(intent) // Handle share intent when app is already running
+        handleSharedIntent(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -69,88 +69,110 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun parseSharedText(sharedText: String): Pair<String?, String> {
-        // Try to parse "From: [number]" format
-        val fromPattern = Regex("From: ([+]?[0-9\\-\\s]+)(?:\n\n|\n)(.*)", RegexOption.DOT_MATCHES_ALL)
-        val match = fromPattern.find(sharedText)
-        return if (match != null) {
-            val phoneNumber = match.groups[1]?.value?.trim()
-            val messageBody = match.groups[2]?.value?.trim() ?: sharedText
-            Pair(phoneNumber, messageBody)
-        } else {
-            Pair(null, sharedText) // Assume entire text is body if no "From: " found
+        // Improved patterns to match various SMS sharing formats
+        val patterns = listOf(
+            Regex("From: ([+]?[0-9\\-\\s]+)(?:\n\n|\n)(.*)", RegexOption.DOT_MATCHES_ALL),  // "From: +123...\n\nMessage"
+            Regex("Sender: ([+]?[0-9\\-\\s]+)(?:\n\n|\n)(.*)", RegexOption.DOT_MATCHES_ALL), // "Sender: +123...\n\nMessage"
+            Regex("([+]?[0-9\\-\\s]+): (.*)", RegexOption.DOT_MATCHES_ALL),                  // "+123...: Message"
+            Regex("\\(([+]?[0-9\\-\\s]+)\\)(.*)", RegexOption.DOT_MATCHES_ALL)               // "(+123...) Message"
+        )
+
+        for (pattern in patterns) {
+            val match = pattern.find(sharedText)
+            if (match != null) {
+                val phoneNumber = match.groups[1]?.value?.trim()?.replace("[^+0-9]".toRegex(), "")
+                val messageBody = match.groups[2]?.value?.trim() ?: sharedText
+                if (phoneNumber != null && phoneNumber.length >= 5) { // Basic validation
+                    return Pair(phoneNumber, messageBody)
+                }
+            }
         }
+
+        // If no pattern matched, try to extract any phone number from the text
+        val phonePattern = Regex("([+]?[0-9\\-\\s]{5,})") // At least 5 digits
+        val phoneMatch = phonePattern.find(sharedText)
+        val extractedNumber = phoneMatch?.value?.replace("[^+0-9]".toRegex(), "")
+        
+        return Pair(
+            if (extractedNumber != null && extractedNumber.length >= 5) extractedNumber else null,
+            sharedText.trim()
+        )
     }
 
     private fun findPhoneNumberByBody(body: String): String? {
+        if (body.isBlank()) return null
+        
         val allSms = getSms()
-        // Match the body exactly or partially (trimmed for robustness)
         val trimmedBody = body.trim()
-        return allSms.find { (it["body"] as String).trim() == trimmedBody }?.get("address") as? String
+        val bodyWords = trimmedBody.split("\\s+".toRegex()).take(5) // First few words
+        
+        // Try to find exact match first
+        allSms.firstOrNull { (it["body"] as String).trim() == trimmedBody }?.let {
+            return it["address"] as? String
+        }
+        
+        // Try partial match (first few words)
+        if (bodyWords.size > 2) {
+            val partialMatch = allSms.firstOrNull { sms ->
+                val smsBody = (sms["body"] as String).trim()
+                bodyWords.all { word -> smsBody.contains(word) }
+            }
+            partialMatch?.let { return it["address"] as? String }
+        }
+        
+        // Try to find any SMS containing parts of the shared text
+        val significantPart = if (trimmedBody.length > 20) {
+            trimmedBody.substring(0, 20) + "..." // First 20 chars
+        } else {
+            trimmedBody
+        }
+        
+        allSms.firstOrNull { (it["body"] as String).contains(significantPart) }?.let {
+            return it["address"] as? String
+        }
+        
+        return null
     }
 
     private fun getSms(): List<Map<String, Any>> {
         val smsList = mutableListOf<Map<String, Any>>()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-        val inboxCursor = contentResolver.query(Telephony.Sms.Inbox.CONTENT_URI, null, null, null, Telephony.Sms.DEFAULT_SORT_ORDER)
+        val inboxCursor = contentResolver.query(
+            Telephony.Sms.Inbox.CONTENT_URI, 
+            arrayOf(
+                Telephony.Sms.BODY,
+                Telephony.Sms.ADDRESS,
+                Telephony.Sms.DATE
+            ), 
+            null, null, 
+            "${Telephony.Sms.DATE} DESC LIMIT 100" // Get recent 100 messages for better performance
+        )
+        
         inboxCursor?.use {
             val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
             val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
 
             while (it.moveToNext()) {
-                val dateMillis = it.getLong(indexDate) // Get timestamp in milliseconds
-                val sms = mapOf(
-                    "address" to it.getString(indexAddress),
-                    "body" to it.getString(indexBody),
-                    "type" to "received",
-                    "date" to dateMillis // Store as long for sorting
-                )
-                smsList.add(sms)
-            }
-        }
-
-        val sentCursor = contentResolver.query(Telephony.Sms.Sent.CONTENT_URI, null, null, null, Telephony.Sms.DEFAULT_SORT_ORDER)
-        sentCursor?.use {
-            val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
-            val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
-            val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
-
-            while (it.moveToNext()) {
-                val dateMillis = it.getLong(indexDate) // Get timestamp in milliseconds
-                val sms = mapOf(
-                    "address" to it.getString(indexAddress),
-                    "body" to it.getString(indexBody),
-                    "type" to "sent",
-                    "date" to dateMillis // Store as long for sorting
-                )
-                smsList.add(sms)
-            }
-        }
-
-        val draftCursor = contentResolver.query(Telephony.Sms.Draft.CONTENT_URI, null, null, null, Telephony.Sms.DEFAULT_SORT_ORDER)
-        draftCursor?.use {
-            val indexBody = it.getColumnIndex(Telephony.Sms.BODY)
-            val indexAddress = it.getColumnIndex(Telephony.Sms.ADDRESS)
-            val indexDate = it.getColumnIndex(Telephony.Sms.DATE)
-
-            while (it.moveToNext()) {
                 val dateMillis = it.getLong(indexDate)
+                val address = it.getString(indexAddress) ?: "Unknown"
                 val sms = mapOf(
-                    "address" to it.getString(indexAddress),
-                    "body" to it.getString(indexBody),
-                    "type" to "draft",
+                    "address" to address,
+                    "body" to it.getString(indexBody) ?: "",
+                    "type" to "received",
                     "date" to dateMillis
                 )
                 smsList.add(sms)
             }
         }
 
-        // Sort by date in ascending order
-        smsList.sortBy { it["date"] as Long }
+        // No need for sent/drafts in this case as we're just looking for received messages
+        // Sort by date in descending order (newest first)
+        smsList.sortByDescending { it["date"] as Long }
 
         return smsList.map { sms ->
-            sms + ("formattedDate" to dateFormat.format(Date(sms["date"] as Long))) // Convert back for display
+            sms + ("formattedDate" to dateFormat.format(Date(sms["date"] as Long)))
         }
     }
 
@@ -163,7 +185,7 @@ class MainActivity : FlutterActivity() {
                 } else {
                     resultCallback?.error("PERMISSION_DENIED", "SMS permission denied", null)
                 }
-                resultCallback = null // Clear callback after use
+                resultCallback = null
             }
         }
     }
