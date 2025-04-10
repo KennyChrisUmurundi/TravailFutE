@@ -288,7 +288,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(dialogContext),
           child: Text(
             "Annuler",
             style: TextStyle(

@@ -184,12 +184,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget _buildActionButtons(Size size) {
     return Row(
       children: [
-        _buildActionButton(
-          size,
-          'Mon Assistant',
-          kTravailFuteMainColor,
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => Assistant())),
-        ),
+        // _buildActionButton(
+        //   size,
+        //   'Mon Assistant',
+        //   kTravailFuteMainColor,
+        //   () => Navigator.push(context, MaterialPageRoute(builder: (_) => Assistant())),
+        // ),
         SizedBox(width: size.width * 0.03),
         // _buildActionButton(
         //   size,

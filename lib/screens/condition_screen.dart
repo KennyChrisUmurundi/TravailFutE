@@ -65,6 +65,11 @@ class ConditionsScreen extends StatelessWidget {
                 title: 'Loi Applicable',
                 content: '''Ces Conditions sont régies par les lois de la Belgique.''',
               ),
+              _buildSection(
+                icon: Icons.block_rounded,
+                title: 'Suspension ou Résiliation',
+                content: '''Nous nous réservons le droit de suspendre l’accès à TravailFuté en cas d’utilisation abusive, de tentative de piratage ou de comportement contraire aux présentes Conditions.''',
+              ),
               const SizedBox(height: 40),
               _buildContactCard(),
               const SizedBox(height: 30),

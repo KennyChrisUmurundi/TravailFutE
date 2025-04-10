@@ -1,4 +1,4 @@
-`import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:travail_fute/constants.dart';
 import 'package:travail_fute/screens/condition_screen.dart';
 import 'package:travail_fute/screens/information_screen.dart';
@@ -159,4 +159,4 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-}`
+}
