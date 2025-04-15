@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-// import 'package:smswatcher/smswatcher.dart';
+
 import 'package:travail_fute/constants.dart';
-import 'package:phone_state/phone_state.dart';
-import 'package:travail_fute/screens/assistant.dart';
 import 'package:travail_fute/screens/client_create.dart';
-// import 'package:travail_fute/screens/message_provider_screen.dart';
 import 'package:travail_fute/screens/notification_screen.dart';
 import 'package:travail_fute/screens/profile_screen.dart';
 import 'package:travail_fute/screens/project_screen.dart';
 import 'package:travail_fute/screens/receipt.dart';
 import 'package:travail_fute/screens/settings_screen.dart';
-import 'package:travail_fute/services/phone_state_service.dart';
-// import 'package:flutter_sms_manager/flutter_sms_manager.dart';
-// import 'package:travail_fute/utils/logger.dart';
-import 'package:travail_fute/widgets/botom_nav.dart';
+
 import 'clients.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,17 +20,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-void waitPermission() async {
-  await Permission.sms.request();
-  await Permission.phone.request();
-}
+
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  
-  PhoneState status = PhoneState.nothing();
-  late PhoneStateService phoneStateService;
+
   // final _smsListenerPlugin = Smswatcher();
   // List<Map<String, dynamic>> _smsList = [];
   bool _isLoading = false;
@@ -50,10 +38,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       vsync: this,
     )..forward();
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    
-    waitPermission();
-    phoneStateService = PhoneStateService(context);
-    phoneStateService.startListening();
+
     // _fetchSms();
   }
 

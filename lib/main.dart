@@ -7,10 +7,10 @@ import 'package:travail_fute/providers/user_provider.dart';
 import 'package:travail_fute/screens/login.dart';
 import 'package:travail_fute/screens/home_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:permission_handler/permission_handler.dart';
 import 'utils/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'package:travail_fute/utils/logger.dart';
+// import 'package:travail_fute/utils/logger.dart';
 import 'package:travail_fute/utils/noti.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -44,21 +44,10 @@ void main() async {
 }
 
 Future<void> requestPermissions(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
-  final statuses = await [
-    Permission.phone,
-    Permission.sms,
-    Permission.microphone,
-    Permission.storage,
-  ].request();
+ 
   await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
     AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
   
-  statuses.forEach((permission, status) {
-    if (status.isDenied) {
-      // Handle the case when the permission is denied
-      logger.i('$permission is denied.');
-    }
-  });
 }
 
 class MyApp extends StatefulWidget {
@@ -91,13 +80,14 @@ class MainPageSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // Define your theme here
         primaryColor: kTravailFuteMainColor,
         hintColor: kTravailFuteSecondaryColor,
         fontFamily: 'Poppins',
       ),
-      home: const RootScaffold(),
+      home: const RootScaffold(), 
     );
   }
 }
