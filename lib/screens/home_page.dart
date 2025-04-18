@@ -100,8 +100,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     children: [
                       _buildWelcomeSection(size),
                       SizedBox(height: size.height * 0.03),
-                      _buildActionButtons(size),
-                      SizedBox(height: size.height * 0.03),
+                      // _buildActionButtons(size),
+                      // SizedBox(height: size.height * 0.03),
                       _buildMainCards(size),
                     ],
                   ),
