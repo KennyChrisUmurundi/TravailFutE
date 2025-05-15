@@ -1,16 +1,53 @@
-# travail_fute
+# TravailFuté – Frontend (Flutter)
 
-A new Flutter project.
+**TravailFuté** is a cross-platform app designed to help freelancers manage invoices, receipts, and payments — built in Flutter and connected to a Django backend API.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🎯 What It Does
 
-A few resources to get you started if this is your first Flutter project:
+- Displays invoices, receipts, payment history
+- User authentication and session handling
+- Responsive UI for mobile
+- Calls secure API endpoints for backend logic (not public)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠 Tech Stack
+
+- **Flutter** (Dart)
+- **REST API Integration** (private Django backend)
+- **State management** (Provider)
+
+---
+
+## 🔒 Note About Backend
+
+The backend (Django REST API, authentication, business logic) is kept private due to sensitive integrations and security design. However, it includes:
+
+- JWT-based authentication
+- PostgreSQL database
+- CI/CD with GitHub Actions
+- Azure deployment
+
+Feel free to reach out if you'd like to know more or view a private version.
+
+---
+
+## Screenshots
+
+![fourth](https://github.com/user-attachments/assets/0df82c13-5e24-4b5b-83b9-c5f29c8af1b2)
+![first](https://github.com/user-attachments/assets/f2b967f3-e496-4442-85e8-494eff6533ef)
+
+
+##  Author
+
+Kenny Chris Ndayikengurukiye  
+[LinkedIn](https://www.linkedin.com/in/kenny-chris-ndayikengurukiye-99742122a/)  
+Email: kenny.chris.mail@gmail.com
+
+---
+
+## License
+
+MIT – free to use, modify, and learn from.
